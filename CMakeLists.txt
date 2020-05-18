@@ -33,7 +33,11 @@ find_package(catkin REQUIRED COMPONENTS
 ################################################################################
 # Declare ROS messages, services and actions
 ################################################################################
-
+add_message_files(
+	FILES
+	Box.msg
+	DetectedBoxes.msg
+)
 
 generate_messages(
 	DEPENDENCIES
