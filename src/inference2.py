@@ -57,6 +57,8 @@ normalize_coords = True
 swap_channels = [2, 1, 0]
 subtract_mean = [123, 117, 104] # get the mean for this dataset
 
+confidence_threshold = 0.5 # Thershold for the box estimation
+
 
 class Object_Detection_Test:
     def __init__(self):
@@ -117,6 +119,7 @@ class Object_Detection_Test:
 
 
     def start(self):
+        plt.ion()
         while not rospy.is_shutdown():
             #box = Box()
             #box.id = 1
@@ -132,13 +135,40 @@ class Object_Detection_Test:
             #self.boxes_pub.publish(boxes)
 
             self.bridge = CvBridge()
+            original_image = self.bridge.imgmsg_to_cv2(self.left_img, "rgb8")
+            resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
+            print(resized_image.shape)
 
-            original_image = self.bridge.imgmsg_to_cv2(self.left_img, "bgr8")
-            resize_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
-            print(resize_image.shape)
-            plt.imshow(resize_image)
+            y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
+            y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
+
+            np.set_printoptions(precision=2, suppress=True, linewidth=90)
+            print("Predicted boxes:\n")
+            print('   class   conf xmin   ymin   xmax   ymax')
+            print(y_pred_thresh[0])
+            colors = plt.cm.hsv(np.linspace(0, 1, 21)).tolist()
+            classes = ['background',
+                'cubesat', 'base station']
+
+            plt.ion()
+            plt.figure(figsize=(20,12))
+            plt.imshow(original_image)
+
+            current_axis = plt.gca()
+            for box in y_pred_thresh[0]:
+                    # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
+                xmin = box[2] * original_image.shape[1] / img_width
+                ymin = box[3] * original_image.shape[0] / img_height
+                xmax = box[4] * original_image.shape[1] / img_width
+                ymax = box[5] * original_image.shape[0] / img_height
+                color = colors[int(box[0])]
+                label = '{}: {:.2f}'.format(classes[int(box[0])], box[1])
+                current_axis.add_patch(plt.Rectangle((xmin, ymin), xmax-xmin, ymax-ymin, color=color, fill=False, linewidth=2))
+                current_axis.text(xmin, ymin, label, size='x-large', color='white', bbox={'facecolor':color, 'alpha':1.0})
             plt.show()
+
             plt.close()
+
 
     def shutdown(self):
         rospy.loginfo("Object Detection Test is shutdown")
