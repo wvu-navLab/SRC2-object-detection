@@ -1,5 +1,9 @@
 #!/usr/bin/env python
+"""
+Created on Sun May 17 22:58:24 2020
 
+@author: Chris Tatsch
+"""
 import rospy
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
@@ -19,10 +23,6 @@ class Object_Detection_Test:
         """
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Object Detection Test Started")
-        self.box_pub = rospy.s("Box", Box,queue_size=1)
-        self.boxes_pub = rospy.Publisher("DetectedBoxes", DetectedBoxes, queue_size = 1)
-
-        self.left_img = Image()
 
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
         left_img_sub = message_filters.Subscriber("/scout_1/camera/left/image_raw", Image)
@@ -31,6 +31,8 @@ class Object_Detection_Test:
         right_cam_info_sub = message_filters.Subscriber("/scout_1/camera/right/camera_info", CameraInfo)
         ts = message_filters.TimeSynchronizer([boxes_sub,left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],5)
         ts.registerCallback(self.image_callback)
+
+        self.image_pub = rospy.Publisher("/BoundingBox/Image", Image, queue_size = 1)
 
         rospy.sleep(5)
         self.start()
@@ -47,26 +49,25 @@ class Object_Detection_Test:
 
 
     def start(self):
+        """
+        transform the image in opencv format, draw bounding boxes and
+        publishes back as a ROS image_msg
+        """
         while not rospy.is_shutdown():
-            box = Box()
-            box.id = 1
-            box.xmin = np.random.randint(0,500)
-            box.ymin = np.random.randint(0,500)
-            box.xmax = np.random.randint(0,500)
-            box.ymax = np.random.randint(0,500)
-            self.box_pub.publish(box)
-            #print(self.left_img.header)
-            boxes = DetectedBoxes()
-            #boxes.header = self.left_img.header
-            boxes.boxes = [box,box,box,box]
-            self.boxes_pub.publish(boxes)
-            #print(self.left_img.header, self.right_img.header )
             self.bridge = CvBridge()
-            original_image = self.bridge.imgmsg_to_cv2(self.left_img, "bgr8")
-            resize_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
-            print(resize_image.shape)
-            plt.imshow(resize_image)
-            plt.show()
+            original_left_image = self.bridge.imgmsg_to_cv2(self.left_img, "bgr8")
+            original_right_image = self.bridge.imgmsg_to_cv2(self.right_img, "bgr8")
+            colors = plt.cm.hsv(np.linspace(0, 1, 21)).tolist()
+            label_list = ["background","cubesat","base_station"]
+            #print(255*colors[int(1)][0:2]),
+            for box in self.boxes.boxes:
+                cv2.rectangle(original_left_image,(box.xmin,box.ymin),(box.xmax,box.ymax),[0,255,0],1)
+                cv2.putText(original_left_image, label_list[int(box.id)]+": "+str(round(box.confidence, 2)),(box.xmin+1,box.ymax-1),
+                fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=0.3, color=(255, 255, 255))
+            img_to_publish = self.bridge.cv2_to_imgmsg(original_left_image, encoding='passthrough')
+            self.image_pub.publish(img_to_publish)
+            #plt.imshow(resize_image)
+            #plt.show()
 
     def shutdown(self):
         rospy.loginfo("Object Detection Test is shutdown")

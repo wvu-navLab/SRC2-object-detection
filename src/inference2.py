@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""
+Created on Sun May 17 22:58:24 2020
+
+@author: Chris Tatsch
+"""
 # ROS Libraries
 import rospy
 from src2_object_detection.msg import Box
@@ -36,6 +41,9 @@ import tensorflow as tf
 import glob
 import os
 
+#robot name (make it as a ros param later) ****************************************
+robot_name = "/scout_1"
+
 #
 # Set the image size.
 img_height = 300
@@ -60,14 +68,15 @@ subtract_mean = [123, 117, 104] # get the mean for this dataset
 confidence_threshold = 0.5 # Thershold for the box estimation
 
 
-class Object_Detection_Test:
+class Object_Detection_Inference:
     def __init__(self):
         """
-        Initialize the box and detected boxes publisher, and define the Subscriber
-        for the
+        Initialize the bounding boxes publisher, define subscriber for the image
+        topics and initialize the SSD300 inference model with the parameters defined
+        above
         """
         rospy.on_shutdown(self.shutdown)
-        rospy.loginfo("Object Detection Test Started")
+        rospy.loginfo("Object Detection Inference Started")
         self.stereo_subscriber()
         self.box_pub = rospy.Publisher("Box", Box,queue_size=1)
         self.boxes_pub = rospy.Publisher("DetectedBoxes", DetectedBoxes, queue_size = 1)
@@ -101,16 +110,20 @@ class Object_Detection_Test:
         self.start()
 
     def stereo_subscriber(self):
-        left_img_sub = message_filters.Subscriber("/scout_1/camera/left/image_raw", Image)
-        left_cam_info_sub = message_filters.Subscriber("/scout_1/camera/left/camera_info", CameraInfo)
-        right_img_sub = message_filters.Subscriber("/scout_1/camera/right/image_raw", Image)
-        right_cam_info_sub = message_filters.Subscriber("/scout_1/camera/right/camera_info", CameraInfo)
+        """
+        Define the Subscriber with time synchronization among the image topics
+        from the stereo camera
+        """
+        left_img_sub = message_filters.Subscriber(robot_name+"/camera/left/image_raw", Image)
+        left_cam_info_sub = message_filters.Subscriber(robot_name+"/camera/left/camera_info", CameraInfo)
+        right_img_sub = message_filters.Subscriber(robot_name+"/camera/right/image_raw", Image)
+        right_cam_info_sub = message_filters.Subscriber(robot_name+"/camera/right/camera_info", CameraInfo)
         ts = message_filters.TimeSynchronizer([left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],5)
         ts.registerCallback(self.image_callback)
 
     def image_callback(self,left_img,left_cam_info, right_img, right_cam_info):
         """
-        Subscriber callback for the stereo camera
+        Subscriber callback for the stereo camera, with synchronized images
         """
         self.left_img = left_img
         self.left_cam_info = left_cam_info
@@ -119,65 +132,50 @@ class Object_Detection_Test:
 
 
     def start(self):
-        plt.ion()
+        """
+            Loop through transforming the subscribed img_msg to
+            an array, resizing it to the 300x300 network input formatself.
+            Then running the inference on the network model and publishing
+            the bounding boxes as a custom msg
+        """
         while not rospy.is_shutdown():
-            #box = Box()
-            #box.id = 1
-            #box.xmin = np.random.randint(0,500)
-            #box.ymin = np.random.randint(0,500)
-            #box.xmax = np.random.randint(0,500)
-            #box.ymax = np.random.randint(0,500)
-            #self.box_pub.publish(box)
-            ##print(self.left_img.header)
-            #boxes = DetectedBoxes()
-            ##boxes.header = self.left_img.header
-            #boxes.boxes = [box,box,box,box]
-            #self.boxes_pub.publish(boxes)
-
             self.bridge = CvBridge()
             original_image = self.bridge.imgmsg_to_cv2(self.left_img, "rgb8")
             resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
-            print(resized_image.shape)
-
+            boxes = DetectedBoxes()
+            boxes.header = self.left_img.header
             y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
             y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
-
             np.set_printoptions(precision=2, suppress=True, linewidth=90)
             print("Predicted boxes:\n")
             print('   class   conf xmin   ymin   xmax   ymax')
             print(y_pred_thresh[0])
-            colors = plt.cm.hsv(np.linspace(0, 1, 21)).tolist()
             classes = ['background',
                 'cubesat', 'base station']
-
-            plt.ion()
-            plt.figure(figsize=(20,12))
-            plt.imshow(original_image)
-
-            current_axis = plt.gca()
+            boxes.boxes = []
             for box in y_pred_thresh[0]:
-                    # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
-                xmin = box[2] * original_image.shape[1] / img_width
-                ymin = box[3] * original_image.shape[0] / img_height
-                xmax = box[4] * original_image.shape[1] / img_width
-                ymax = box[5] * original_image.shape[0] / img_height
-                color = colors[int(box[0])]
-                label = '{}: {:.2f}'.format(classes[int(box[0])], box[1])
-                current_axis.add_patch(plt.Rectangle((xmin, ymin), xmax-xmin, ymax-ymin, color=color, fill=False, linewidth=2))
-                current_axis.text(xmin, ymin, label, size='x-large', color='white', bbox={'facecolor':color, 'alpha':1.0})
-            plt.show()
-
-            plt.close()
-
+                box_ = Box()
+                box_.id = box[0]
+                box_.confidence = box[1]
+                # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
+                box_.xmin = box[2] * original_image.shape[1] / img_width
+                box_.ymin = box[3] * original_image.shape[0] / img_height
+                box_.xmax = box[4] * original_image.shape[1] / img_width
+                box_.ymax = box[5] * original_image.shape[0] / img_height
+                boxes.boxes.append(box_)
+            self.boxes_pub.publish(boxes)
 
     def shutdown(self):
-        rospy.loginfo("Object Detection Test is shutdown")
+        """
+        Shutdown Node
+        """
+        rospy.loginfo("Object Detection Inference is shutdown")
         rospy.sleep(1)
 
 def main():
     try:
-    	rospy.init_node('object_detection_test', anonymous=True)
-        object_detection_test = Object_Detection_Test()
+    	rospy.init_node('object_detection_inference', anonymous=True)
+        object_detection_test = Object_Detection_Inference()
 
     except rospy.ROSInterruptException:
         pass
