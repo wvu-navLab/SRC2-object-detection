@@ -16,6 +16,7 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
+import rospkg
 
 from keras import backend as K
 from keras.models import load_model
@@ -78,11 +79,12 @@ class Object_Detection_Inference:
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Object Detection Inference Started")
         self.stereo_subscriber()
+        rospack = rospkg.RosPack()
         self.box_pub = rospy.Publisher("Box", Box,queue_size=1)
         self.boxes_pub = rospy.Publisher("DetectedBoxes", DetectedBoxes, queue_size = 1)
         K.clear_session() # Clear previous models from memory.
         self.model = ssd_300(image_size=(img_height, img_width, 3),
-                n_classes=2,
+                n_classes=7,
                 mode='inference',
                 l2_regularization=0.0005,
                 scales=scales,
@@ -96,7 +98,7 @@ class Object_Detection_Inference:
                 subtract_mean=subtract_mean,
                 swap_channels=swap_channels)
         #Load some weights into the model.
-        weights_path = "src2_test01.h5"
+        weights_path = rospack.get_path('src2_object_detection')+"/src/src2_hackaton01_weights.h5"
         self.model.load_weights(weights_path, by_name=True)
         # 3: Instantiate an optimizer and the SSD loss function and compile the model.
         #    If you want to follow the original Caffe implementation, use the preset SGD
@@ -150,8 +152,9 @@ class Object_Detection_Inference:
             print("Predicted boxes:\n")
             print('   class   conf xmin   ymin   xmax   ymax')
             print(y_pred_thresh[0])
-            classes = ['background',
-                'cubesat', 'base station']
+            classes = ['background', 'cube_sat', 'base_station',
+            'base_station_marker','obstacle', 'volatile',
+            'crater','rover']
             boxes.boxes = []
             for box in y_pred_thresh[0]:
                 box_ = Box()
