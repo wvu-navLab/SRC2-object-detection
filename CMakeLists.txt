@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   message_runtime
   message_generation
+  stereo_msgs
 )
 
 
@@ -38,12 +39,17 @@ add_message_files(
 	Box.msg
 	DetectedBoxes.msg
 )
-
+add_service_files(
+  FILES
+  object_estimation.srv
+)
 generate_messages(
 	DEPENDENCIES
   actionlib_msgs
 	std_msgs
 	geometry_msgs
+	sensor_msgs
+	stereo_msgs
 )
 
 ################################################################################

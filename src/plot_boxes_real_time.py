@@ -63,7 +63,7 @@ class Object_Detection_Test:
                 cv2.rectangle(original_left_image,(box.xmin,box.ymin),(box.xmax,box.ymax),[0,255,0],1)
                 cv2.putText(original_left_image, label_list[int(box.id)]+": "+str(round(box.confidence, 2)),(box.xmin+1,box.ymax-1),
                 fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=0.3, color=(255, 255, 255))
-            img_to_publish = self.bridge.cv2_to_imgmsg(original_left_image, encoding='passthrough')
+            img_to_publish = self.bridge.cv2_to_imgmsg(original_left_image,"bgr8")
             self.image_pub.publish(img_to_publish)
 
 
