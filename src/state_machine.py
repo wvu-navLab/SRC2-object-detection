@@ -91,7 +91,6 @@ class StateMachineRound3:
                                             self.global_pose_rover_base_frame.pose.orientation.y,
                                             self.global_pose_rover_base_frame.pose.orientation.z,
                                             self.global_pose_rover_base_frame.pose.orientation.w])
-
         globalHbase_[0:3,3] = [self.global_pose_rover_base_frame.pose.position.x,
                               self.global_pose_rover_base_frame.pose.position.y,
                               self.global_pose_rover_base_frame.pose.position.z]
@@ -107,7 +106,6 @@ class StateMachineRound3:
                      "cube_sat",
                      "scout_1_tf/left_camera_optical"
                      )
-
         self.br.sendTransform((self.global_pose_rover_base_frame.pose.position.x,
                               self.global_pose_rover_base_frame.pose.position.y,
                               self.global_pose_rover_base_frame.pose.position.z),
@@ -123,7 +121,6 @@ class StateMachineRound3:
         rospy.loginfo("Cubesat Global Pose")
         print(p,q)
         return (p,q)
-
 
     def check_for_cube_sat(self,boxes):
         for box in boxes:
@@ -153,7 +150,6 @@ class StateMachineRound3:
             self.global_pose_rover_base_frame = get_true_pose_call(True)
         except rospy.ServiceException as exc:
             print("Service did not process request: " + str(exc))
-
 #        pose = Pose()
 #        pose.position.x = -23.4600716594
 #        pose.position.y = 8.51154641996

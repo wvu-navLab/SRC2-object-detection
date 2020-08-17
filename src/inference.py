@@ -87,7 +87,7 @@ class Object_Detection_Inference:
                 subtract_mean=subtract_mean,
                 swap_channels=swap_channels)
         #Load some weights into the model.
-        weights_path = rospack.get_path('src2_object_detection')+"/src/src2_hackaton01_weights.h5"
+        weights_path = rospack.get_path('src2_object_detection')+"/src/src2_august2020_weights_02.h5"
         self.model.load_weights(weights_path, by_name=True)
         # 3: Instantiate an optimizer and the SSD loss function and compile the model.
         #    If you want to follow the original Caffe implementation, use the preset SGD
