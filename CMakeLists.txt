@@ -42,6 +42,9 @@ add_message_files(
 add_service_files(
   FILES
   object_estimation.srv
+  find_cubesat.srv
+  approach_base_station.srv
+  align_base_station.srv
 )
 generate_messages(
 	DEPENDENCIES
