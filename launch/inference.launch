@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+  <group ns="scout_1">
+    <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen"/>
+  </group>
+</launch>
