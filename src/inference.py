@@ -109,7 +109,7 @@ class Object_Detection_Inference:
         left_cam_info_sub = message_filters.Subscriber("camera/left/camera_info", CameraInfo)
         right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
         right_cam_info_sub = message_filters.Subscriber("camera/right/camera_info", CameraInfo)
-        ts = message_filters.TimeSynchronizer([left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],20)
+        ts = message_filters.ApproximateTimeSynchronizer([left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],10, 0.1, allow_headerless=True)
         ts.registerCallback(self.image_callback)
 
     def image_callback(self,left_img,left_cam_info, right_img, right_cam_info):

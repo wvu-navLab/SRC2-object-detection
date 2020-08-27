@@ -54,7 +54,8 @@ class ApproachBaseStationService:
         left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
         right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
-        ts = message_filters.TimeSynchronizer([left_img_sub,right_img_sub,boxes_sub],20)
+        ts = message_filters.ApproximateTimeSynchronizer([left_img_sub,right_img_sub,boxes_sub],10, 0.1, allow_headerless=True)
+
         ts.registerCallback(self.image_callback)
 
     def image_callback(self,left_img, right_img, boxes):
