@@ -8,7 +8,7 @@ import rospy
 from std_msgs.msg import Bool
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
-from src2_object_detection.srv import object_estimation, object_estimationResponse
+from src2_object_detection.srv import ObjectEstimation, ObjectEstimationResponse
 from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 import message_filters #for sincronizing time
@@ -73,7 +73,7 @@ class EstimationCall:
         """
         rospy.loginfo("Call ObjectEstimation Service")
         rospy.wait_for_service('Cubesat_point_estimation')
-        object_estimation_call = rospy.ServiceProxy('Cubesat_point_estimation', object_estimation)
+        object_estimation_call = rospy.ServiceProxy('Cubesat_point_estimation', ObjectEstimation)
         try:
             object_estimation_call = object_estimation_call(self.cube_sat, self.disparity, self.left_img, self.right_img)
         except rospy.ServiceException as exc:

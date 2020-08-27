@@ -42,7 +42,7 @@ add_message_files(
 )
 add_service_files(
   FILES
-  object_estimation.srv
+  ObjectEstimation.srv
   FindCubesat.srv
   ApproachBaseStation.srv
   AlignBaseStation.srv

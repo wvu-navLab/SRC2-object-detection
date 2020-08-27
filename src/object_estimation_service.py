@@ -11,7 +11,7 @@ import rospy
 from std_msgs.msg import Bool
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
-from src2_object_detection.srv import object_estimation, object_estimationResponse
+from src2_object_detection.srv import ObjectEstimation, ObjectEstimationResponse
 from stereo_msgs.msg import DisparityImage
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point
@@ -23,7 +23,7 @@ class ObjectEstimationService:
     """
     def __init__(self):
         rospy.loginfo("Object 3D point estimation node is running")
-        s = rospy.Service('cubesat_point_estimation', object_estimation, self.object_estimation_handle)
+        s = rospy.Service('cubesat_point_estimation', ObjectEstimation, self.object_estimation_handle)
         rospy.spin()
 
     def object_estimation_handle(self,req):
