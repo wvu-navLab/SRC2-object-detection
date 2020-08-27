@@ -1,7 +1,7 @@
 ################################################################################
 # Set minimum required version of cmake, project name and compile options
 ################################################################################
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(src2_object_detection)
 
 add_compile_options(-std=c++11)
@@ -24,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_runtime
   message_generation
   stereo_msgs
+  srcp2_msgs
 )
 
 
@@ -52,7 +53,7 @@ generate_messages(
 	std_msgs
 	geometry_msgs
 	sensor_msgs
-	stereo_msgs
+  stereo_msgs
 )
 
 ################################################################################
@@ -63,7 +64,7 @@ generate_messages(
 # Declare catkin specific configuration to be passed to dependent projects
 ################################################################################
 catkin_package(
-  CATKIN_DEPENDS rospy std_msgs sensor_msgs geometry_msgs nav_msgs tf message_generation message_runtime
+  CATKIN_DEPENDS rospy std_msgs sensor_msgs geometry_msgs nav_msgs tf message_generation message_runtime srcp2_msgs
 )
 
 ################################################################################
@@ -72,6 +73,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ~/srcp2-competitors/ros_workspace/install/include
 )
 
 
