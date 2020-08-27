@@ -15,8 +15,6 @@ from geometry_msgs.msg import Twist
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
 from src2_object_detection.srv import ApproachBaseStation, ApproachBaseStationResponse
-from range_to_base.srv import RangeToBase, RangeToBaseResponse
-
 from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
@@ -92,15 +90,15 @@ class ApproachBaseStationService:
                 search_ = True
                 break
         self.stop()
-        response = approach_base_stationResponse()
+        response = ApproachBaseStationResponse()
         resp_ = Bool()
         resp_.data = search_
         response.success = resp_
+        base_station_range = Float64()
+        response.range = base_station_range
+
         if search_ == True:
             rospy.loginfo("Rover approached base station")
-            base_station_range = Float64()
-            base_station_range.data =range_.range.range
-            response.range = base_station_range
         else:
             rospy.logerr("Base Station was not found when running turn in place maneuver")
         self.base = False # reset flag variable
@@ -122,8 +120,7 @@ class ApproachBaseStationService:
                 break
         print("Close to base station")
         self.stop()
-        range_ = self.range_base_service_call()
-        return range_
+        #range_ = self.range_base_service_call()
 
     def turn_in_place(self, direction):
         """
@@ -161,22 +158,6 @@ class ApproachBaseStationService:
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_publisher.publish(_cmd_message)
-
-    def range_base_service_call(self):
-        """
-        Service that returns the 3D point from the cubesat bounding box
-        disparity and stereo image
-        """
-        rospy.loginfo("Call ObjectEstimation Service")
-        rospy.wait_for_service('range_to_base_service')
-        range_to_base_call = rospy.ServiceProxy('range_to_base_service', RangeToBase) # Change the service name when inside launch file
-        try:
-            range_to_base_call = range_to_base_call(0.4)
-        except rospy.ServiceException as exc:
-            print("Service did not process request: " + str(exc))
-        #Add some exception
-        print(range_to_base_call)
-        return range_to_base_call
 
     def check_for_base_station(self,boxes):
         for box in boxes:

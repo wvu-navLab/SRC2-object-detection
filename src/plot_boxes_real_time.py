@@ -23,6 +23,7 @@ class Object_Detection_Test:
         """
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Object Detection Test Started")
+        _ = rospy.wait_for_message("camera/left/image_raw", Image)
 
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
         left_img_sub = message_filters.Subscriber("/scout_1/camera/left/image_raw", Image)
@@ -32,7 +33,7 @@ class Object_Detection_Test:
         ts = message_filters.TimeSynchronizer([boxes_sub,left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],5)
         ts.registerCallback(self.image_callback)
 
-        self.image_pub = rospy.Publisher("/BoundingBox/Image", Image, queue_size = 1)
+        self.image_pub = rospy.Publisher("BoundingBox/Image", Image, queue_size = 1)
 
         rospy.sleep(5)
         self.start()

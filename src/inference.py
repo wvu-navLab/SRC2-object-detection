@@ -105,11 +105,11 @@ class Object_Detection_Inference:
         Define the Subscriber with time synchronization among the image topics
         from the stereo camera
         """
-        left_img_sub = message_filters.Subscriber(robot_name+"/camera/left/image_raw", Image)
-        left_cam_info_sub = message_filters.Subscriber(robot_name+"/camera/left/camera_info", CameraInfo)
-        right_img_sub = message_filters.Subscriber(robot_name+"/camera/right/image_raw", Image)
-        right_cam_info_sub = message_filters.Subscriber(robot_name+"/camera/right/camera_info", CameraInfo)
-        ts = message_filters.TimeSynchronizer([left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],5)
+        left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
+        left_cam_info_sub = message_filters.Subscriber("camera/left/camera_info", CameraInfo)
+        right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
+        right_cam_info_sub = message_filters.Subscriber("camera/right/camera_info", CameraInfo)
+        ts = message_filters.TimeSynchronizer([left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],10)
         ts.registerCallback(self.image_callback)
 
     def image_callback(self,left_img,left_cam_info, right_img, right_cam_info):
@@ -129,40 +129,42 @@ class Object_Detection_Inference:
             Then running the inference on the network model and publishing
             the bounding boxes as a custom msg
         """
+        self.left_img = False
         while not rospy.is_shutdown():
-            self.bridge = CvBridge()
-            original_image = self.bridge.imgmsg_to_cv2(self.left_img, "rgb8")
-            resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
-            boxes = DetectedBoxes()
-            boxes.header = self.left_img.header
-            y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
-            y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
-            np.set_printoptions(precision=2, suppress=True, linewidth=90)
-            print("Predicted boxes:\n")
-            print('   class   conf xmin   ymin   xmax   ymax')
-            print(y_pred_thresh[0])
-            classes = ['background', 'cube_sat', 'base_station',
-            'base_station_marker','obstacle', 'volatile',
-            'crater','rover']
-            boxes.boxes = []
-            for box in y_pred_thresh[0]:
-                box_ = Box()
-                box_.id = box[0]
-                box_.confidence = box[1]
-                # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
-                box_.xmin = box[2] * original_image.shape[1] / img_width
-                box_.ymin = box[3] * original_image.shape[0] / img_height
-                box_.xmax = box[4] * original_image.shape[1] / img_width
-                box_.ymax = box[5] * original_image.shape[0] / img_height
-                boxes.boxes.append(box_)
-            self.boxes_pub.publish(boxes)
+            if self.left_img:
+                self.bridge = CvBridge()
+                original_image = self.bridge.imgmsg_to_cv2(self.left_img, "rgb8")
+                resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
+                boxes = DetectedBoxes()
+                boxes.header = self.left_img.header
+                y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
+                y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
+                np.set_printoptions(precision=2, suppress=True, linewidth=90)
+                print("Predicted boxes:\n")
+                print('   class   conf xmin   ymin   xmax   ymax')
+                print(y_pred_thresh[0])
+                classes = ['background', 'cube_sat', 'base_station',
+                'base_station_marker','obstacle', 'volatile',
+                'crater','rover']
+                boxes.boxes = []
+                for box in y_pred_thresh[0]:
+                    box_ = Box()
+                    box_.id = box[0]
+                    box_.confidence = box[1]
+                    # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
+                    box_.xmin = box[2] * original_image.shape[1] / img_width
+                    box_.ymin = box[3] * original_image.shape[0] / img_height
+                    box_.xmax = box[4] * original_image.shape[1] / img_width
+                    box_.ymax = box[5] * original_image.shape[0] / img_height
+                    boxes.boxes.append(box_)
+                self.boxes_pub.publish(boxes)
 
     def shutdown(self):
         """
         Shutdown Node
         """
         rospy.loginfo("Object Detection Inference is shutdown")
-        rospy.sleep(1)
+        rospy.sleep(3)
 
 def main():
     try:

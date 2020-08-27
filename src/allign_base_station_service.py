@@ -14,7 +14,7 @@ from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Twist
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
-from src2_object_detection.srv import ApproachBaseStation, ApproachBaseStationResponse
+from src2_object_detection.srv import AlignBaseStation, AlignBaseStationResponse
 from range_to_base.srv import RangeToBase, RangeToBaseResponse
 
 from stereo_msgs.msg import DisparityImage
@@ -33,7 +33,7 @@ robot_name = "/scout_1"
 robot_base_frame = "scout_1_tf/base_footprint"
 robot_disparity_image_camera_frame = "scout_1_tf/left_camera_optical"
 
-class ApproachBaseStationService:
+class AlignBaseStationService:
     """
 
     """
@@ -45,52 +45,47 @@ class ApproachBaseStationService:
         self.stereo_subscriber()
         rospy.sleep(2)
         rospy.loginfo("Approach Base Station service node is running")
-        s = rospy.Service('approach_base_station', ApproachBaseStation, self.approach_base_station_handle)
+        s = rospy.Service('align_base_station', AlignBaseStation, self.align_base_station_handle)
         rospy.spin()
 
     def stereo_subscriber(self):
         """
         Define the Subscriber with time synchronization among the image topics
-        from the stereo camera
+        from the stereo camera and classfier
         """
-        left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
-        right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
-        boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
+        left_img_sub = message_filters.Subscriber(robot_name+"/camera/left/image_raw", Image)
+        right_img_sub = message_filters.Subscriber(robot_name+"/camera/right/image_raw", Image)
+        boxes_sub = message_filters.Subscriber("/DetectedBoxes", DetectedBoxes)
         ts = message_filters.TimeSynchronizer([left_img_sub,right_img_sub,boxes_sub],5)
         ts.registerCallback(self.image_callback)
 
     def image_callback(self,left_img, right_img, boxes):
         """
-        Subscriber callback for the stereo camera, with synchronized images
+        Subscriber callback for the stereo camera, with synchronized images and
+        classifier ounding boxes
         """
         self.left_img = left_img
         self.right_img = right_img
         self.boxes = boxes
 
-    def approach_base_station_handle(self, req):
+    def align_base_station_handle(self, req):
         """
-        Service for approaching the base station in the SRC qualification
+        Service for aliging the rover with the base station marker
         (without calling the service to score points in qualification round 3)
         """
-        response = self.search_for_base_station()
-        rospy.loginfo("Aprroach Base Station Service Started")
+        rospy.loginfo("Align Base Station Service Started")
+        self.range = req.range`
+        self.true_range = self.laser_mean()
+        print("True Range" +str(self.true_range))
+        response = self.align()
         return response
 
-    def search_for_base_station(self):
+    def align(self):
         """
-        Turn in place to check for base station
+        Turn around base station maintaining true range using direct laser data
+        until marker is in the center of the image
         """
-        search_ = False
-        for i in range(150):
-            self.turn_in_place(-1)
-            self.check_for_base_station(self.boxes.boxes)
-            if self.base:
-                print("Base Station found")
-                print(self.base)
-                self.stop()
-                range_ = self.approach_base_station()
-                search_ = True
-                break
+        while not self.marker_centered():
         self.stop()
         response = approach_base_stationResponse()
         resp_ = Bool()
@@ -106,59 +101,43 @@ class ApproachBaseStationService:
         self.base = False # reset flag variable
         return response
 
-    def approach_base_station(self):
+    def marker_centered(self):
         """
-        Visual approach the base station,
-        !!Need to improve robustness by adding some error check and obstacle avoidance
+
         """
-        while True:
-            self.check_for_base_station(self.boxes.boxes)
-            x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
-            print(-x_mean/640)
-            self.drive(0/05, -x_mean/640)
-            print(self.base.xmax-self.base.xmin)
-            print(self.laser_mean())
-            if (self.base.xmax-self.base.xmin) > 350 and self.laser_mean() < 3.5:
-                break
-        print("Close to base station")
-        self.stop()
-        range_ = self.range_base_service_call()
-        return range_
+        return False
 
     def turn_in_place(self, direction):
         """
         Turn in place clockwise or counter clockwise
         """
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
+        _cmd_publisher = rospy.Publisher(robot_name+"/driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_message.angular.z = 0.5*direction
         for i in range(2):
             _cmd_publisher.publish(_cmd_message)
             rospy.sleep(0.05)
 
-    def drive_straight(self, time):
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
-        _cmd_message = Twist()
-        _cmd_message.linear.x = 1
-        rospy.loginfo("test")
-        for i in range(5):
-            _cmd_publisher.publish(_cmd_message)
-            rospy.sleep(0.05)
-        rospy.sleep(time)
+    def circulate_base_station_service_call(self, throttle, radius):
+        """
+        Service
+        """
+        rospy.loginfo("Call ObjectEstimation Service")
+        rospy.wait_for_service('range_to_base_service')
+        range_to_base_call = rospy.ServiceProxy('range_to_base_service', RangeToBase) # Change the service name when inside launch file
+        try:
+            range_to_base_call = range_to_base_call(0.4)
+        except rospy.ServiceException as exc:
+            print("Service did not process request: " + str(exc))
+        #Add some exception
+        print(range_to_base_call)
+        return range_to_base_call
 
-    def drive(self,time, heading):
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
-        _cmd_message = Twist()
-        _cmd_message.linear.x = 1
-        _cmd_message.angular.z = heading
-        for i in range(5):
-            _cmd_publisher.publish(_cmd_message)
-            rospy.sleep(0.05)
-        rospy.sleep(time)
-
+rosservice call /scout_1/driving/circ_base_station "throttle: 0.0
+radius: 0.0"
 
     def stop(self):
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
+        _cmd_publisher = rospy.Publisher(robot_name+"/driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_publisher.publish(_cmd_message)
 
@@ -184,7 +163,7 @@ class ApproachBaseStationService:
                 self.base = box
 
     def laser_mean(self):
-        laser = rospy.wait_for_message("laser/scan", LaserScan)
+        laser = rospy.wait_for_message(robot_name+"/laser/scan", LaserScan)
         #print(laser)
         #print("average:")
         #print(np.mean(laser.ranges))
