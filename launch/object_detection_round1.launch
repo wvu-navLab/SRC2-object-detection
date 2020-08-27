@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 
-<launch>	
+<launch>
   <group ns="scout_1">
     <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen">
     </node>
 
-    <node name="plot_boxes" pkg="src2_object_detection" type="plot_boxes_real_time.py" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
+    <node name="plot_boxes" pkg="src2_object_detection" type="plot_boxes_real_time.py" output="screen">
     </node>
-    <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service_round_1.py" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
+    <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service_round_1.py" output="screen">
     </node>
 
 
