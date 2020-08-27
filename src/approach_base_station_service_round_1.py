@@ -54,7 +54,7 @@ class ApproachBaseStationService:
         left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
         right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
-        ts = message_filters.TimeSynchronizer([left_img_sub,right_img_sub,boxes_sub],5)
+        ts = message_filters.TimeSynchronizer([left_img_sub,right_img_sub,boxes_sub],20)
         ts.registerCallback(self.image_callback)
 
     def image_callback(self,left_img, right_img, boxes):
@@ -68,7 +68,7 @@ class ApproachBaseStationService:
     def approach_base_station_handle(self, req):
         """
         Service for approaching the base station in the SRC qualification
-        (without calling the service to score points in qualification round 3)
+        (without calling the service to score points in qualification round 1)
         """
         response = self.search_for_base_station()
         rospy.loginfo("Aprroach Base Station Service Started")
