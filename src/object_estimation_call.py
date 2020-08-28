@@ -26,7 +26,7 @@ class EstimationCall:
         rospy.loginfo("Object 3D point estimation node is running")
         self.cube_sat = False #variable used later for checking if cubesat was found
         self.stereo_subscriber()
-        rospy.sleep(10)
+        rospy.sleep(5)
         self.wait_for_cubesat()
 
     def stereo_subscriber(self):
