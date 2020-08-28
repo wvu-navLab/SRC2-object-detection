@@ -26,7 +26,7 @@ class ObstaclesToPointCloud:
     Convert obstacles bounding boxes to point cloud
     """
     def __init__(self):
-        rospy.loginfo("Convert obstacles bounding boxes to point cloud node is on")
+        rospy.loginfo("Node for converting obstacles to point cloud using disparity image is on")
         self.point_cloud_publisher = rospy.Publisher("inference/point_cloud", PointCloud2, queue_size = 1 )
         self.stereo_subscriber()
         rospy.sleep(8)
@@ -37,35 +37,30 @@ class ObstaclesToPointCloud:
         Define the Subscriber with time synchronization among the image topics
         from the stereo camera
         """
-        left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
-        right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
         disparity_sub = message_filters.Subscriber("/disparity", DisparityImage)
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
-        ts = message_filters.ApproximateTimeSynchronizer([left_img_sub,right_img_sub,disparity_sub,boxes_sub], 10, 0.1, allow_headerless=True)
+        ts = message_filters.ApproximateTimeSynchronizer([disparity_sub,boxes_sub], 10, 0.1, allow_headerless=True)
         ts.registerCallback(self.image_callback)
 
-    def image_callback(self,left_img, right_img, disparity,boxes):
+    def image_callback(self, disparity,boxes):
         """
-        Subscriber callback for the stereo camera, with synchronized images
+        Subscriber callback for the disparity images and bounding boxes
         """
-        self.left_img = left_img
-        self.right_img = right_img
         self.disparity = disparity
         self.boxes = boxes
 
-
     def convert_to_point_cloud(self):
         """
-
+        Convert to point cloud and publish
         """
         while not rospy.is_shutdown():
             self.points = []
             for box in self.boxes.boxes:
                 if box.id == 4:
                     self.process_data(box)
-            scaled_polygon_pcl = pcl2.create_cloud_xyz32(self.left_img.header, self.points)
+            scaled_polygon_pcl = PointCloud2()
+            scaled_polygon_pcl = pcl2.create_cloud_xyz32(self.boxes.header, self.points)
             self.point_cloud_publisher.publish(scaled_polygon_pcl)
-                    #return response
 
     def process_data(self, bounding_box):
         """
@@ -103,8 +98,6 @@ class ObstaclesToPointCloud:
         if z_ >= 1000:
             return False
         self.points.append([x_,y_,z_])
-
-
 
 def main():
     try:
