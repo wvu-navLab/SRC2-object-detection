@@ -24,7 +24,6 @@ from keras.preprocessing import image
 from keras.optimizers import Adam
 from models.keras_ssd300 import ssd_300
 from keras_loss_function.keras_ssd_loss import SSDLoss
-
 import tensorflow as tf
 
 # System Libraries
@@ -140,9 +139,9 @@ class Object_Detection_Inference:
                 y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
                 y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
                 np.set_printoptions(precision=2, suppress=True, linewidth=90)
-              #  print("Predicted boxes:\n")
-              #  print('   class   conf xmin   ymin   xmax   ymax')
-              #  print(y_pred_thresh[0])
+                print("Predicted boxes:\n")
+                print('   class   conf xmin   ymin   xmax   ymax')
+                print(y_pred_thresh[0])
                 classes = ['background', 'cube_sat', 'base_station',
                 'base_station_marker','obstacle', 'volatile',
                 'crater','rover']

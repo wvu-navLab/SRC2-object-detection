@@ -2,6 +2,14 @@
 
 <launch>
   <group ns="scout_1">
+
     <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen"/>
+
+    <node name="plot" pkg="src2_object_detection" type="plot_boxes_real_time.py" output="screen">
+    </node>
+
+    <node name="to_point" pkg="src2_object_detection" type="object_to_point_cloud.py" output="screen">
+    </node>
+
   </group>
 </launch>
