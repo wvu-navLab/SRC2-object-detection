@@ -118,7 +118,7 @@ class ApproachBaseStationService:
             self.drive(0/05, -x_mean/640)
             print(self.base.xmax-self.base.xmin)
             print(self.laser_mean())
-            if (self.base.xmax-self.base.xmin) > 350 and self.laser_mean() < 3.5:
+            if (self.base.xmax-self.base.xmin) > 350 and self.laser_mean() < 6:
                 break
         print("Close to base station")
         self.stop()
