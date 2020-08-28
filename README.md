@@ -19,6 +19,14 @@ roslaunch wvu_vo_ros vo_pipeline.launch
 
 
 Dependencies:
-Keras
-tensorflow
+
+```python2.7 -m pip install Pillow```
+
+```python2.7 -m pip install setuptools```
+
+```python2.7 -m pip install tensorflow==2.1.0```
+
+```python2.7 -m pip install keras=2.3.1```
+
+
 
