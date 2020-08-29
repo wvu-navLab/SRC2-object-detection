@@ -79,7 +79,7 @@ class ObstaclesToPointCloud:
         self.bl = self.disparity_image.T # baseline
         for x in range(self.bounding_box.xmin, self.bounding_box.xmax):
             for y in range(self.bounding_box.ymin,self.bounding_box.ymax):
-                disparity = self.image.transpose()[x,y] #get x and y on the correct indices
+                disparity = self.image.transpose()[x-1,y-1] #get x and y on the correct indices
                 self.ipt_to_opt(disparity,x,y)
 
     def ipt_to_opt(self, disparity,x,y):
