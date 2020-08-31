@@ -30,7 +30,7 @@ class ObstaclesToPointCloud:
         self.point_cloud_publisher = rospy.Publisher("inference/point_cloud", PointCloud2, queue_size = 1 )
         self.stereo_subscriber()
         rospy.sleep(8)
-        self.convert_to_point_cloud()
+        rospy.spin()
 
     def stereo_subscriber(self):
         """
@@ -48,19 +48,19 @@ class ObstaclesToPointCloud:
         """
         self.disparity = disparity
         self.boxes = boxes
+        self.convert_to_point_cloud()
 
     def convert_to_point_cloud(self):
         """
         Convert to point cloud and publish
         """
-        while not rospy.is_shutdown():
-            self.points = []
-            for box in self.boxes.boxes:
-                if box.id == 4:
-                    self.process_data(box)
-            scaled_polygon_pcl = PointCloud2()
-            scaled_polygon_pcl = pcl2.create_cloud_xyz32(self.boxes.header, self.points)
-            self.point_cloud_publisher.publish(scaled_polygon_pcl)
+        self.points = []
+        for box in self.boxes.boxes:
+            if box.id == 4:
+                self.process_data(box)
+        scaled_polygon_pcl = PointCloud2()
+        scaled_polygon_pcl = pcl2.create_cloud_xyz32(self.boxes.header, self.points)
+        self.point_cloud_publisher.publish(scaled_polygon_pcl)
 
     def process_data(self, bounding_box):
         """
@@ -79,6 +79,7 @@ class ObstaclesToPointCloud:
         self.bl = self.disparity_image.T # baseline
         for x in range(self.bounding_box.xmin, self.bounding_box.xmax):
             for y in range(self.bounding_box.ymin,self.bounding_box.ymax):
+                print(self.image.transpose().shape)
                 disparity = self.image.transpose()[x,y] #get x and y on the correct indices
                 self.ipt_to_opt(disparity,x,y)
 
@@ -90,7 +91,7 @@ class ObstaclesToPointCloud:
         Input: disparity, x 2D point, y 2d point and camera parameters
         """
         disparity = disparity/16
-        if disparity == -1:
+        if disparity == -1 or disparity == 0.0:
             return False
         z_ = self.sx/disparity*self.bl;
         x_ = (x-self.cx)/self.sx*z_;
