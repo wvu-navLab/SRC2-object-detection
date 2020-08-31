@@ -2,6 +2,7 @@
 
 <launch>
   <group ns="scout_1">
+    <param name="/use_sim_time" value="true"/>
     <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen">
     </node>
     <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service_round_1.py" output="screen">
