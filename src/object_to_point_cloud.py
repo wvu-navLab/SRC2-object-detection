@@ -56,7 +56,7 @@ class ObstaclesToPointCloud:
         """
         self.points = []
         for box in self.boxes.boxes:
-            if box.id == 4:
+            if box.id == 4 or box.id == 2:
                 self.process_data(box)
         scaled_polygon_pcl = PointCloud2()
         scaled_polygon_pcl = pcl2.create_cloud_xyz32(self.boxes.header, self.points)
