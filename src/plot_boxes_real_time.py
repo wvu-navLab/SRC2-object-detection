@@ -34,9 +34,8 @@ class Object_Detection_Test:
         ts.registerCallback(self.image_callback)
 
         self.image_pub = rospy.Publisher("BoundingBox/Image", Image, queue_size = 1)
+        rospy.spin()
 
-        rospy.sleep(5)
-        self.start()
 
     def image_callback(self,boxes,left_img,left_cam_info, right_img, right_cam_info):
         """
@@ -47,7 +46,7 @@ class Object_Detection_Test:
         self.left_cam_info = left_cam_info
         self.right_img = right_img
         self.right_cam_info = right_cam_info
-
+        self.start()
 
     def start(self):
         """

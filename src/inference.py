@@ -153,8 +153,13 @@ class Object_Detection_Inference:
                     # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
                     box_.xmin = box[2] * original_image.shape[1] / img_width
                     box_.ymin = box[3] * original_image.shape[0] / img_height
+                    if box[4]>300:
+                        box[4] = 300
+                    if box[5]>300:
+                        box[5] = 300
                     box_.xmax = box[4] * original_image.shape[1] / img_width
                     box_.ymax = box[5] * original_image.shape[0] / img_height
+
                     boxes.boxes.append(box_)
                 self.boxes_pub.publish(boxes)
 
