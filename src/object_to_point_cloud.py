@@ -29,6 +29,8 @@ class ObstaclesToPointCloud:
         rospy.loginfo("Node for converting obstacles to point cloud using disparity image is on")
         self.point_cloud_publisher = rospy.Publisher("inference/point_cloud", PointCloud2, queue_size = 1 )
         self.stereo_subscriber()
+        self.seg_points = {}
+        self.filtered_points = []
         rospy.sleep(8)
         rospy.spin()
 
@@ -58,6 +60,9 @@ class ObstaclesToPointCloud:
         for box in self.boxes.boxes:
             if box.id == 4 or box.id == 2:
                 self.process_data(box)
+
+        # self.cluster_points(thresh = 30)
+
         scaled_polygon_pcl = PointCloud2()
         scaled_polygon_pcl = pcl2.create_cloud_xyz32(self.boxes.header, self.points)
         self.point_cloud_publisher.publish(scaled_polygon_pcl)
@@ -98,6 +103,46 @@ class ObstaclesToPointCloud:
         if z_ >= 1000:
             return False
         self.points.append([x_,y_,z_])
+
+    def cluster_points(self, thresh):
+        """
+        clustering the points using density based clustering method: DBSCAN
+        and only keeping the larger clusters
+
+        Input: points, theshold for cluster member size
+        ----------------------
+        for DBSCAN :
+
+        eps : The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+        This is not a maximum bound on the distances of points within a cluster.
+        This is the most important DBSCAN parameter to choose appropriately for your data set and distance function.
+
+        min_samples : The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+        This includes the point itself
+        -----------------------
+        for KMeans :
+
+        n_clusters : number of clusters
+        -----------------------
+        thresh : after clustering we remove the points that have size lower than this value
+        """
+        self.points_np = np.array(self.points)
+        clustering = DBSCAN(eps=0.5, min_samples=30).fit(self.points_np)
+        # clustering = KMeans(n_clusters=5, random_state=0).fit(self.points)
+        labels_np = np.array(clustering.labels_)
+        u_labels = np.unique(labels_np)
+        for l in u_labels:
+            if l != -1:
+                self.seg_points[l] = []
+
+        for i in range(len(labels_np)):
+            m = clustering.labels_[i]
+            if m != -1 :    # -1 label for noisy data
+                self.seg_points[m].append(self.points[i])
+
+        for ind, val in self.seg_points.items():
+            if len(self.seg_points[ind]) > thresh:
+                self.filtered_points.extend(val)
 
 def main():
     try:
