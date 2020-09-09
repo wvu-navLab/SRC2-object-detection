@@ -60,7 +60,7 @@ class ApproachBaseStationService:
         Define the Subscriber with time synchronization among the image topics
         from the stereo camera
         """
-        disparity_sub = message_filters.Subscriber("/disparity", DisparityImage)
+        disparity_sub = message_filters.Subscriber("disparity", DisparityImage)
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
         ts = message_filters.ApproximateTimeSynchronizer([disparity_sub, boxes_sub],10, 0.1, allow_headerless=True)
 
