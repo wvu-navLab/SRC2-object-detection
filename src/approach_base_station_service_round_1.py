@@ -14,6 +14,7 @@ from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Twist
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
+from src2_object_detection.srv import ObjectEstimation, ObjectEstimationResponse
 from src2_object_detection.srv import ApproachBaseStation, ApproachBaseStationResponse
 from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
@@ -31,6 +32,15 @@ robot_name = "/scout_1"
 robot_base_frame = "scout_1_tf/base_footprint"
 robot_disparity_image_camera_frame = "scout_1_tf/left_camera_optical"
 
+class Obstacle:
+    """
+    Obstacle Definition
+    """
+    def __init__(self,obstacle, distance):
+        self.obstacle = obstacle
+        self.distance = distance
+
+
 class ApproachBaseStationService:
     """
 
@@ -40,6 +50,8 @@ class ApproachBaseStationService:
         """
         rospy.on_shutdown(self.shutdown)
         self.base = False
+        self.obstacles = []
+        self.timeout = 60
         self.stereo_subscriber()
         rospy.sleep(2)
         rospy.loginfo("Approach Base Station service node is running")
@@ -51,20 +63,24 @@ class ApproachBaseStationService:
         Define the Subscriber with time synchronization among the image topics
         from the stereo camera
         """
-        left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
-        right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
+        disparity_sub = message_filters.Subscriber("/disparity", DisparityImage)
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
-        ts = message_filters.ApproximateTimeSynchronizer([left_img_sub,right_img_sub,boxes_sub],10, 0.1, allow_headerless=True)
+        ts = message_filters.ApproximateTimeSynchronizer([disparity_sub, boxes_sub],10, 0.1, allow_headerless=True)
 
         ts.registerCallback(self.image_callback)
 
-    def image_callback(self,left_img, right_img, boxes):
+    def image_callback(self, disparity, boxes):
         """
         Subscriber callback for the stereo camera, with synchronized images
         """
-        self.left_img = left_img
-        self.right_img = right_img
+        self.obstacles = []
+        self.disparity = disparity
         self.boxes = boxes
+        self.check_for_obstacles(self.boxes.boxes)
+
+        for obstacle_ in self.obstacle_boxes:
+            dist_ = self.object_distance_estimation(obstacle_)
+            self.obstacles.append(Obstacle(obstacle_,dist_.object_position.point.z))
 
     def approach_base_station_handle(self, req):
         """
@@ -91,6 +107,8 @@ class ApproachBaseStationService:
                 search_ = True
                 break
         self.stop()
+        self.face_base()
+        self.stop()
         response = ApproachBaseStationResponse()
         resp_ = Bool()
         resp_.data = search_
@@ -110,14 +128,33 @@ class ApproachBaseStationService:
         Visual approach the base station,
         !!Need to improve robustness by adding some error check and obstacle avoidance
         """
+        turning_offset_i_ = 0.0
         while True:
             self.check_for_base_station(self.boxes.boxes)
-            x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
-            print(-x_mean/640)
-            self.drive(0/05, -x_mean/640)
-            print(self.base.xmax-self.base.xmin)
-            print(self.laser_mean())
-            if (self.base.xmax-self.base.xmin) > 350 and self.laser_mean() < 5.0:
+            x_mean_base = float(self.base.xmin+self.base.xmax)/2.0-320
+            minimum_dist_ = 10.0
+            turning_offset = 0.0
+            for obstacle_ in self.obstacles:
+                obstacle_mean_ = float(obstacle_.obstacle.xmin+obstacle_.obstacle.xmax)/2.0-320
+                turning_offset_i_ = turning_offset
+                if obstacle_.distance > 0.1:
+                    if obstacle_.distance < minimum_dist_:
+                        minimum_dist_ = obstacle_.distance
+                    if obstacle_.distance < 5:
+                        turning_offset += np.sign(obstacle_mean_)*0.3*(1-np.abs(obstacle_mean_)/320.0)
+                print(obstacle_.distance)
+                print(obstacle_.obstacle)
+            speed = minimum_dist_/10.0
+            rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i_
+
+
+            if turning_offset != 0.0:
+                r = rospy.Rate(10)
+                for i in range(30)
+                    self.drive_crab_motion(speed,rotation_speed)
+                    r.sleep()
+            self.drive( speed, rotation_speed)
+            if (self.base.xmax-self.base.xmin) > 350 and self.laser_mean() < 6.0:
                 break
         print("Close to base station")
         self.stop()
@@ -134,30 +171,48 @@ class ApproachBaseStationService:
             _cmd_publisher.publish(_cmd_message)
             rospy.sleep(0.05)
 
+    def object_distance_estimation(self, object):
+
+        rospy.wait_for_service('cubesat_point_estimation') #Change the name of the service
+        object_estimation_call = rospy.ServiceProxy('cubesat_point_estimation', ObjectEstimation)
+        try:
+            object_distance = object_estimation_call(object, self.disparity)
+        except rospy.ServiceException as exc:
+            print("Service did not process request: " + str(exc))
+        return(object_distance)
+
     def drive_straight(self, time):
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_message.linear.x = 1
-        rospy.loginfo("test")
         for i in range(5):
             _cmd_publisher.publish(_cmd_message)
             rospy.sleep(0.05)
         rospy.sleep(time)
 
-    def drive(self,time, heading):
+    def drive(self,speed, heading):
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
-        _cmd_message.linear.x = 1
+        _cmd_message.linear.x = speed
         _cmd_message.angular.z = heading
         for i in range(5):
             _cmd_publisher.publish(_cmd_message)
             rospy.sleep(0.05)
-        rospy.sleep(time)
+
+    def drive_crab_motion(self,x_speed, y_speed):
+        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
+        _cmd_message = Twist()
+        _cmd_message.linear.x = x_speed
+        _cmd_message.linear.y = y_speed
+        for i in range(5):
+            _cmd_publisher.publish(_cmd_message)
+            rospy.sleep(0.05)
 
 
     def stop(self):
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
+        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 1 )
         _cmd_message = Twist()
+        _cmd_publisher.publish(_cmd_message)
         _cmd_publisher.publish(_cmd_message)
 
     def check_for_base_station(self,boxes):
@@ -165,11 +220,14 @@ class ApproachBaseStationService:
             if box.id == 2:
                 self.base = box
 
+    def check_for_obstacles(self,boxes):
+        self.obstacle_boxes = []
+        for box in boxes:
+            if box.id == 4:
+                self.obstacle_boxes.append(box)
+
     def laser_mean(self):
         laser = rospy.wait_for_message("laser/scan", LaserScan)
-        #print(laser)
-        #print("average:")
-        #print(np.mean(laser.ranges))
         _val = 0
         _ind = 0
         for i in laser.ranges[20:80]:
@@ -179,6 +237,16 @@ class ApproachBaseStationService:
         print("Laser Range")
         if _ind != 0:
             return(_val/_ind)
+
+    def face_base(self):
+        while True:
+            self.check_for_base_station(self.boxes.boxes)
+            x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
+            print(-x_mean)
+            self.drive(0.0, -x_mean/640)
+            print(self.base.xmax-self.base.xmin)
+            if np.abs(x_mean)<5:
+                break
 
     def shutdown(self):
         """

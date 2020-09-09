@@ -32,13 +32,13 @@ class ObjectEstimationService:
         extract 3D points from the bounding box and returns the average
         3D point from those
         """
-        rospy.loginfo("Object Estimation Service Started")
-        response = object_estimationResponse()
+        #rospy.loginfo("Object Estimation Service Started")
+        response = ObjectEstimationResponse()
         self.point = Point()
         self.points = []
         self.process_data(req)
         response.object_position = self.get_average_point()
-        print(response.object_position)
+        #print(response.object_position)
         return response
 
     def process_data(self, data):
@@ -69,7 +69,7 @@ class ObjectEstimationService:
         Input: disparity, x 2D point, y 2d point and camera parameters
         """
         disparity = disparity/16
-        if disparity == -1:
+        if disparity == -1 or disparity == 0.0:
             return False
         self.point.z = self.sx/disparity*self.bl;
         self.point.x = (x-self.cx)/self.sx*self.point.z;
@@ -91,15 +91,19 @@ class ObjectEstimationService:
             x = x + p.x
             y = y + p.y
             z = z + p.z
-        x = x/len(self.points)
-        y = y/len(self.points)
-        z = z/len(self.points)
+        if len(self.points):
+            x = x/len(self.points)
+            y = y/len(self.points)
+            z = z/len(self.points)
         point = PointStamped()
         point.header = self.disparity_image.header
         point.point.x = x
         point.point.y = y
         point.point.z = z
         return point
+
+
+
 
 
 def main():

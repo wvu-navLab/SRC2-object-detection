@@ -1,6 +1,4 @@
 src2_object_detection/Box bounding_box
-stereo_msgs/DisparityImage disparity_image 
-sensor_msgs/Image left_image
-sensor_msgs/Image right_image
+stereo_msgs/DisparityImage disparity_image
 ---
 geometry_msgs/PointStamped object_position

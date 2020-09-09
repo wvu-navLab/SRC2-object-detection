@@ -53,18 +53,17 @@ class Object_Detection_Test:
         transform the ROS img_msg in opencv format, draw bounding boxes and
         writes the label and publishes back as a ROS image_msg to a new topic
         """
-        while not rospy.is_shutdown():
-            self.bridge = CvBridge()
-            original_left_image = self.bridge.imgmsg_to_cv2(self.left_img, "bgr8")
-            original_right_image = self.bridge.imgmsg_to_cv2(self.right_img, "bgr8")
-            label_list = ["background","cubesat","base_station","base_station_marker",
-            "obstacle","volatile","crater","rover"]
-            for box in self.boxes.boxes:
-                cv2.rectangle(original_left_image,(box.xmin,box.ymin),(box.xmax,box.ymax),[0,255,0],1)
-                cv2.putText(original_left_image, label_list[int(box.id)]+": "+str(round(box.confidence, 2)),(box.xmin+1,box.ymax-1),
-                fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=0.3, color=(255, 255, 255))
-            img_to_publish = self.bridge.cv2_to_imgmsg(original_left_image,"bgr8")
-            self.image_pub.publish(img_to_publish)
+        self.bridge = CvBridge()
+        original_left_image = self.bridge.imgmsg_to_cv2(self.left_img, "bgr8")
+        original_right_image = self.bridge.imgmsg_to_cv2(self.right_img, "bgr8")
+        label_list = ["background","cubesat","base_station","base_station_marker",
+        "obstacle","volatile","crater","rover"]
+        for box in self.boxes.boxes:
+            cv2.rectangle(original_left_image,(box.xmin,box.ymin),(box.xmax,box.ymax),[0,255,0],1)
+            cv2.putText(original_left_image, label_list[int(box.id)]+": "+str(round(box.confidence, 2)),(box.xmin+1,box.ymax-1),
+            fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=0.3, color=(255, 255, 255))
+        img_to_publish = self.bridge.cv2_to_imgmsg(original_left_image,"bgr8")
+        self.image_pub.publish(img_to_publish)
 
 
     def shutdown(self):

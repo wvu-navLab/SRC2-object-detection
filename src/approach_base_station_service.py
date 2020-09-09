@@ -21,7 +21,7 @@ from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
 from sensor_msgs.msg import LaserScan
-from srcp2_msgs.srv import LocalizationSrv, AprioriLocationSrv
+from srcp2_msgs.srv import LocalizationSrv, AprioriLocationSrv, BrakeRoverSrv
 import message_filters #for sincronizing time
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -92,14 +92,14 @@ class ApproachBaseStationService:
                 search_ = True
                 break
         self.stop()
-        response = approach_base_stationResponse()
+        response = ApproachBaseStationResponse()
         resp_ = Bool()
         resp_.data = search_
         response.success = resp_
         if search_ == True:
             rospy.loginfo("Rover approached base station")
             base_station_range = Float64()
-            base_station_range.data =range_.range.range
+            #base_station_range.data =range_.range.range #Uncomment to use Laser Tools range
             response.range = base_station_range
         else:
             rospy.logerr("Base Station was not found when running turn in place maneuver")
@@ -118,11 +118,15 @@ class ApproachBaseStationService:
             self.drive(0/05, -x_mean/640)
             print(self.base.xmax-self.base.xmin)
             print(self.laser_mean())
-            if (self.base.xmax-self.base.xmin) > 350 and self.laser_mean() < 6:
+            if (self.base.xmax-self.base.xmin) > 350 and self.laser_mean() < 4.6:
                 break
         print("Close to base station")
         self.stop()
-        range_ = self.range_base_service_call()
+        self.brake_rover(100)
+        range_ = 0.0
+        #range_ = self.range_base_service_call() #Jason's laser tool to estimate true range
+        self.brake_rover(0)
+
         return range_
 
     def turn_in_place(self, direction):
@@ -167,7 +171,7 @@ class ApproachBaseStationService:
         Service that returns the 3D point from the cubesat bounding box
         disparity and stereo image
         """
-        rospy.loginfo("Call ObjectEstimation Service")
+        rospy.loginfo("Call Range to Base Station service")
         rospy.wait_for_service('range_to_base_service')
         range_to_base_call = rospy.ServiceProxy('range_to_base_service', RangeToBase) # Change the service name when inside launch file
         try:
@@ -185,9 +189,6 @@ class ApproachBaseStationService:
 
     def laser_mean(self):
         laser = rospy.wait_for_message("laser/scan", LaserScan)
-        #print(laser)
-        #print("average:")
-        #print(np.mean(laser.ranges))
         _val = 0
         _ind = 0
         for i in laser.ranges[20:80]:
@@ -197,6 +198,15 @@ class ApproachBaseStationService:
         print("Laser Range")
         if _ind != 0:
             return(_val/_ind)
+
+    def brake_rover(self, value):
+        rospy.wait_for_service('brake_rover')
+        braker_rover_call = rospy.ServiceProxy('brake_rover', BrakeRoverSrv)
+        try:
+            toggle_light_call = braker_rover_call(float(value))
+        except rospy.ServiceException as exc:
+            print("Service did not process request: " + str(exc))
+        print("Rover brake force applied: " + str(value))
 
     def shutdown(self):
         """
