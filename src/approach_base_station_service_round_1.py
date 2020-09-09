@@ -28,9 +28,6 @@ from tf import TransformListener, TransformBroadcaster
 import tf.transformations as t_
 import numpy as np
 
-robot_name = "/scout_1"
-robot_base_frame = "scout_1_tf/base_footprint"
-robot_disparity_image_camera_frame = "scout_1_tf/left_camera_optical"
 
 class Obstacle:
     """
