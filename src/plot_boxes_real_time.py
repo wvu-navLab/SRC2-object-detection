@@ -26,10 +26,10 @@ class Object_Detection_Test:
         _ = rospy.wait_for_message("camera/left/image_raw", Image)
 
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
-        left_img_sub = message_filters.Subscriber("/scout_1/camera/left/image_raw", Image)
-        left_cam_info_sub = message_filters.Subscriber("/scout_1/camera/left/camera_info", CameraInfo)
-        right_img_sub = message_filters.Subscriber("/scout_1/camera/right/image_raw", Image)
-        right_cam_info_sub = message_filters.Subscriber("/scout_1/camera/right/camera_info", CameraInfo)
+        left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
+        left_cam_info_sub = message_filters.Subscriber("camera/left/camera_info", CameraInfo)
+        right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
+        right_cam_info_sub = message_filters.Subscriber("camera/right/camera_info", CameraInfo)
         ts = message_filters.ApproximateTimeSynchronizer([boxes_sub,left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],10, 0.1, allow_headerless=True)
         ts.registerCallback(self.image_callback)
 
