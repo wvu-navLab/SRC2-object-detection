@@ -147,7 +147,7 @@ class ApproachBaseStationService:
 
             if turning_offset != 0.0:
                 r = rospy.Rate(10)
-                for i in range(30)
+                for i in range(30):
                     self.drive_crab_motion(speed,rotation_speed)
                     r.sleep()
             self.drive( speed, rotation_speed)
