@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 
+
 <launch>
   <group ns="excavator_1">
     <param name="/use_sim_time" value="true"/>
@@ -7,7 +8,16 @@
     </node>
     <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service_round_1.py" output="screen">
     </node>
+
+    <node name="object_estimation_service" pkg="src2_object_detection" type="object_estimation_service.py" output="screen">
+    </node>
+
     <node name="to_point" pkg="src2_object_detection" type="object_to_point_cloud.py" respawn="true" output="screen">
     </node>
+
+    <node name="plot" pkg="src2_object_detection" type="plot_boxes_real_time.py" output="screen">
+    </node>
+
+
   </group>
 </launch>
