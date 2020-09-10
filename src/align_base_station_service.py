@@ -83,7 +83,8 @@ class AlignBaseStationService:
         print("True Range" +str(self.true_range))
         response_ = self.align()
         response = AlignBaseStationResponse()
-        resp_ = Bool()
+        resp_ = Bool(response_)
+        response.success = resp_
         return response
 
     def align(self):
@@ -102,15 +103,16 @@ class AlignBaseStationService:
             range_ = self.range + self.true_range - range_
             print(range_)
             self.circulate_base_station_service(0.1, range_)
-            rospy.sleep(0.8)
+            rospy.sleep(0.5)
             counter +=1
-            if counter >10:
+            if counter >15:
                 counter = 0
                 rospy.sleep(0.2)
                 self.face_base()
                 self.stop()
         self.stop()
         self.face_marker() # center the marker a last time
+        self.stop()
         return True
 
     def marker_centered(self):
@@ -141,7 +143,6 @@ class AlignBaseStationService:
             x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
             print(-x_mean)
             self.drive(0.0, -x_mean/640)
-            print(self.base.xmax-self.base.xmin)
             if np.abs(x_mean)<5:
                 break
 
@@ -150,10 +151,11 @@ class AlignBaseStationService:
             self.check_for_base_station_marker(self.boxes.boxes)
             x_mean = float(self.marker.xmin+self.marker.xmax)/2.0-320
             print(-x_mean)
-            self.drive(0.0, -x_mean/640)
+            self.drive(0.0, -x_mean/1000)
             print(self.marker.xmax-self.marker.xmin)
             if np.abs(x_mean)<5:
                 break
+
 
 
     def circulate_base_station_service(self, throttle, radius):
@@ -171,10 +173,11 @@ class AlignBaseStationService:
         print(circ_base_)
         return circ_base_
 
-    def drive(self, linear_speed, heading):
+    def drive(self, linear_speed, heading, y = 0.0):
         _cmd_publisher = rospy.Publisher(robot_name+"/driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_message.linear.x = linear_speed
+        _cmd_message.linear.y = y
         _cmd_message.angular.z = heading
         for i in range(5):
             _cmd_publisher.publish(_cmd_message)

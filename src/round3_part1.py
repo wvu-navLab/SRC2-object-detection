@@ -60,7 +60,7 @@ class Round3Part1:
         Define the Subscriber with time synchronization among the image topics
         from the stereo camera
         """
-        disparity_sub = message_filters.Subscriber("/disparity", DisparityImage)
+        disparity_sub = message_filters.Subscriber("disparity", DisparityImage)
         left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
         right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
@@ -269,7 +269,7 @@ class Round3Part1:
         for i in range(20):
             object_estimation_call = rospy.ServiceProxy('cubesat_point_estimation', ObjectEstimation)
             try:
-                self.cube_3d_point = object_estimation_call(self.cube_sat, self.disparity, self.left_img, self.right_img)
+                self.cube_3d_point = object_estimation_call(self.cube_sat, self.disparity)
             except rospy.ServiceException as exc:
                 print("Service did not process request: " + str(exc))
             rospy.loginfo("Cubesat point with respect to camera frame")

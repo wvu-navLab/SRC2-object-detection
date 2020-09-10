@@ -20,7 +20,7 @@ from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
 from sensor_msgs.msg import LaserScan
-from srcp2_msgs.srv import LocalizationSrv, AprioriLocationSrv
+from srcp2_msgs.srv import LocalizationSrv, AprioriLocationSrv, ToggleLightSrv
 import message_filters #for sincronizing time
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -130,13 +130,24 @@ class ApproachBaseStationService:
             rospy.get_time()
         init_time_ = rospy.get_time()
 
+        toggle_light_ = 1
+
         while True:
             self.check_for_base_station(self.boxes.boxes)
             x_mean_base = float(self.base.xmin+self.base.xmax)/2.0-320
             minimum_dist_ = 10.0
             turning_offset = 0.0
 
+            if toggle_light_ == 1:
+                self.toggle_light(0.6)
+                toggle_light_ = 0
+            else:
+                self.toggle_light(0.0)
+                toggle_light_ = 1
+
             curr_time_ = rospy.get_time()
+            print("TIME")
+            print(curr_time_ - init_time_)
             if curr_time_ - init_time_ >50:
                 rospy.logerr("Time Out in Approach Base Station")
                 return 0.0, False
@@ -149,17 +160,16 @@ class ApproachBaseStationService:
                         minimum_dist_ = obstacle_.distance
                     if obstacle_.distance < 8:
                         turning_offset += np.sign(obstacle_mean_)*0.3*(1-np.abs(obstacle_mean_)/320.0)
-                print(obstacle_.distance)
-                print(obstacle_.obstacle)
+#                print(obstacle_.distance)
             speed = minimum_dist_/10.0
             rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i_
 
             # if turning_offset != 0.0:
-            #     r = rospy.Rate(5)
-            #     print("AVOIDING!!!!!")
-            #     for i in range(30):
-            #         self.drive_crab_motion(speed*0.1,rotation_speed)
-            #         r.sleep()
+            #  r = rospy.Rate(10)
+            #  print("AVOIDING!!!!!")
+            #  for i in range(20):
+            #      self.drive_crab_motion(speed*0.1, rotation_speed*5)
+            #      r.sleep()
             self.drive(speed, rotation_speed)
             if (self.base.xmax-self.base.xmin) > 340 and self.laser_mean() < 6.0:
                 break
@@ -255,6 +265,14 @@ class ApproachBaseStationService:
             print(self.base.xmax-self.base.xmin)
             if np.abs(x_mean)<5:
                 break
+
+    def toggle_light(self, value):
+        toggle_light_call = rospy.ServiceProxy('toggle_light', ToggleLightSrv)
+        try:
+            toggle_light_call = toggle_light_call(str(value))
+        except rospy.ServiceException as exc:
+            print("Service did not process request: " + str(exc))
+
 
     def shutdown(self):
         """
