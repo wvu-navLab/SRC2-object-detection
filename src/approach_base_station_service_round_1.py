@@ -100,23 +100,23 @@ class ApproachBaseStationService:
                 print("Base Station found")
                 print(self.base)
                 self.stop()
-                range_ = self.approach_base_station()
-                search_ = True
+                range_, search_ = self.approach_base_station()
+                self.face_base()
+                self.stop()
                 break
-        self.stop()
-        self.face_base()
-        self.stop()
+
         response = ApproachBaseStationResponse()
         resp_ = Bool()
         resp_.data = search_
         response.success = resp_
         base_station_range = Float64()
+        base_station_range.data = range_
         response.range = base_station_range
 
         if search_ == True:
             rospy.loginfo("Rover approached base station")
         else:
-            rospy.logerr("Base Station was not found when running turn in place maneuver")
+            rospy.logerr("Base Station was not found when running turn in place maneuver or timeout")
         self.base = False # reset flag variable
         return response
 
@@ -126,35 +126,46 @@ class ApproachBaseStationService:
         !!Need to improve robustness by adding some error check and obstacle avoidance
         """
         turning_offset_i_ = 0.0
+        while rospy.get_time() == 0:
+            rospy.get_time()
+        init_time_ = rospy.get_time()
+
         while True:
             self.check_for_base_station(self.boxes.boxes)
             x_mean_base = float(self.base.xmin+self.base.xmax)/2.0-320
             minimum_dist_ = 10.0
             turning_offset = 0.0
+
+            curr_time_ = rospy.get_time()
+            if curr_time_ - init_time_ >50:
+                rospy.logerr("Time Out in Approach Base Station")
+                return 0.0, False
+
             for obstacle_ in self.obstacles:
                 obstacle_mean_ = float(obstacle_.obstacle.xmin+obstacle_.obstacle.xmax)/2.0-320
                 turning_offset_i_ = turning_offset
                 if obstacle_.distance > 0.1:
                     if obstacle_.distance < minimum_dist_:
                         minimum_dist_ = obstacle_.distance
-                    if obstacle_.distance < 5:
+                    if obstacle_.distance < 8:
                         turning_offset += np.sign(obstacle_mean_)*0.3*(1-np.abs(obstacle_mean_)/320.0)
                 print(obstacle_.distance)
                 print(obstacle_.obstacle)
             speed = minimum_dist_/10.0
             rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i_
 
-
-            if turning_offset != 0.0:
-                r = rospy.Rate(10)
-                for i in range(30):
-                    self.drive_crab_motion(speed,rotation_speed)
-                    r.sleep()
-            self.drive( speed, rotation_speed)
-            if (self.base.xmax-self.base.xmin) > 350 and self.laser_mean() < 6.0:
+            # if turning_offset != 0.0:
+            #     r = rospy.Rate(5)
+            #     print("AVOIDING!!!!!")
+            #     for i in range(30):
+            #         self.drive_crab_motion(speed*0.1,rotation_speed)
+            #         r.sleep()
+            self.drive(speed, rotation_speed)
+            if (self.base.xmax-self.base.xmin) > 340 and self.laser_mean() < 6.0:
                 break
         print("Close to base station")
         self.stop()
+        return self.laser_mean(), True
         #range_ = self.range_base_service_call()
 
     def turn_in_place(self, direction):
