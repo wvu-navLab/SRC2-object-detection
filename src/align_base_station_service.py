@@ -93,17 +93,17 @@ class AlignBaseStationService:
         until marker is in the center of the image
         """
         counter = 0
+        range_ = 0
         while not self.marker_centered():
             curr_dist_ = self.laser_mean()
             if curr_dist_:
                 range_ = curr_dist_
-            print(range_)
-            print(self.range)
-            print(self.true_range)
             range_ = self.range + self.true_range - range_
-            print(range_)
+            if range_ < 2.0: # Check for unusual laser readings
+                range_ = self.true_range
+            print("Range: "+ str(range_))
             self.circulate_base_station_service(0.1, range_)
-            rospy.sleep(0.5)
+            rospy.sleep(0.7)
             counter +=1
             if counter >15:
                 counter = 0
@@ -162,7 +162,7 @@ class AlignBaseStationService:
         """
         Service
         """
-        rospy.loginfo("Call ObjectEstimation Service")
+        rospy.loginfo("Call Circulate Base Station Service")
         rospy.wait_for_service('driving/circ_base_station')
         circulate_base_station_service_call = rospy.ServiceProxy('driving/circ_base_station', CirculateBaseStation) # Change the service name when inside launch file
         try:
@@ -171,6 +171,7 @@ class AlignBaseStationService:
             print("Service did not process request: " + str(exc))
         #Add some exception
         print(circ_base_)
+        print("Throttle: "+str(throttle))
         return circ_base_
 
     def drive(self, linear_speed, heading, y = 0.0):

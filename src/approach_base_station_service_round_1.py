@@ -101,7 +101,10 @@ class ApproachBaseStationService:
                 print(self.base)
                 self.stop()
                 range_, search_ = self.approach_base_station()
-                self.face_base()
+                print("SEARCH")
+                print(search_)
+                if search_ == True:
+                    self.face_base()
                 self.stop()
                 break
 
@@ -137,6 +140,11 @@ class ApproachBaseStationService:
             x_mean_base = float(self.base.xmin+self.base.xmax)/2.0-320
             minimum_dist_ = 10.0
             turning_offset = 0.0
+            laser_ = self.laser_mean()
+
+            if laser_ <10.0:
+                rospy.logerr("MIN DIST SET TO 6")
+                minimum_dist_ = 6.0
 
             if toggle_light_ == 1:
                 self.toggle_light(0.6)
@@ -151,6 +159,7 @@ class ApproachBaseStationService:
             if curr_time_ - init_time_ >50:
                 rospy.logerr("Time Out in Approach Base Station")
                 return 0.0, False
+            print("test")
 
             for obstacle_ in self.obstacles:
                 obstacle_mean_ = float(obstacle_.obstacle.xmin+obstacle_.obstacle.xmax)/2.0-320
@@ -171,7 +180,7 @@ class ApproachBaseStationService:
             #      self.drive_crab_motion(speed*0.1, rotation_speed*5)
             #      r.sleep()
             self.drive(speed, rotation_speed)
-            if (self.base.xmax-self.base.xmin) > 340 and self.laser_mean() < 6.0:
+            if (self.base.xmax-self.base.xmin) > 340 and laser_ < 5.6:
                 break
         print("Close to base station")
         self.stop()
