@@ -143,8 +143,8 @@ class ApproachBaseStationService:
             laser_ = self.laser_mean()
 
             if laser_ <10.0:
-                rospy.logerr("MIN DIST SET TO 6")
-                minimum_dist_ = 6.0
+    #            rospy.logerr("MIN DIST SET TO 6")
+                minimum_dist_ = 8.0
 
             if toggle_light_ == 1:
                 self.toggle_light(0.6)
