@@ -5,25 +5,24 @@
 <launch>
   <group ns="scout_1">
 
-    <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen"/>
+    <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen">
+      <param name="print_to_terminal" type="bool" value="False"/>
+    </node>
 
     <node name="plot" pkg="src2_object_detection" type="plot_boxes_real_time.py" output="screen">
     </node>
 
-    <node name="range_to_base" pkg="range_to_base" type="rangeToBaseService.py" output="screen">
-    </node>
-
     <node name="object_estimation_service" pkg="src2_object_detection" type="object_estimation_service.py" output="screen">
+      <param name="print_to_terminal" type="bool" value="False"/>
     </node>
 
     <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service_round_1.py" output="screen">
+      <param name="print_to_terminal" type="bool" value="True"/>
     </node>
 
     <node name="align_base_station_service" pkg="src2_object_detection" type="align_base_station_service.py" output="screen">
+      <param name="print_to_terminal" type="bool" value="False"/>
     </node>
-
-    <!-- <node name="round3_part1" pkg="src2_object_detection" type="round3_part1.py" output="screen">
-    </node> -->
 
   </group>
 </launch>

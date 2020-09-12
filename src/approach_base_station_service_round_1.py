@@ -29,6 +29,10 @@ import tf.transformations as t_
 import numpy as np
 
 
+print_to_terminal = rospy.get_param('approach_base_station_service/print_to_terminal', False)
+ROVER_MIN_VEL = rospy.get_param('approach_base_station_service/rover_min_vel', 0.8)
+APPROACH_TIMEOUT = rospy.get_param('approach_base_station_service/approach_timeout', 50)
+
 class Obstacle:
     """
     Obstacle Definition
@@ -40,7 +44,7 @@ class Obstacle:
 
 class ApproachBaseStationService:
     """
-
+    Service to find the base station and approach it using visual servoing
     """
     def __init__(self):
         """
@@ -74,15 +78,13 @@ class ApproachBaseStationService:
         self.disparity = disparity
         self.boxes = boxes
         self.check_for_obstacles(self.boxes.boxes)
-
-        for obstacle_ in self.obstacle_boxes:
-            dist_ = self.object_distance_estimation(obstacle_)
-            self.obstacles.append(Obstacle(obstacle_,dist_.object_position.point.z))
+        for obstacle in self.obstacle_boxes:
+            dist = self.object_distance_estimation(obstacle)
+            self.obstacles.append(Obstacle(obstacle,dist.object_position.point.z))
 
     def approach_base_station_handle(self, req):
         """
         Service for approaching the base station in the SRC qualification
-        (without calling the service to score points in qualification round 1)
         """
         response = self.search_for_base_station()
         rospy.loginfo("Aprroach Base Station Service Started")
@@ -92,31 +94,33 @@ class ApproachBaseStationService:
         """
         Turn in place to check for base station
         """
-        search_ = False
+        search = False
         for i in range(150):
             self.turn_in_place(-1)
             self.check_for_base_station(self.boxes.boxes)
             if self.base:
+
                 print("Base Station found")
-                print(self.base)
+                if print_to_terminal:
+                    print(self.base)
                 self.stop()
-                range_, search_ = self.approach_base_station()
-                print("SEARCH")
-                print(search_)
-                if search_ == True:
+                _range, search = self.approach_base_station()
+                if print_to_terminal:
+                    print("Rover approach to base station was: {}"
+                        "and the laser distance is {}".format(search, _range))
+                if search == True:
                     self.face_base()
                 self.stop()
                 break
 
         response = ApproachBaseStationResponse()
-        resp_ = Bool()
-        resp_.data = search_
-        response.success = resp_
+        resp = Bool()
+        resp.data = search
+        response.success = resp
         base_station_range = Float64()
-        base_station_range.data = range_
+        base_station_range.data = _range
         response.range = base_station_range
-
-        if search_ == True:
+        if search == True:
             rospy.loginfo("Rover approached base station")
         else:
             rospy.logerr("Base Station was not found when running turn in place maneuver or timeout")
@@ -128,64 +132,51 @@ class ApproachBaseStationService:
         Visual approach the base station,
         !!Need to improve robustness by adding some error check and obstacle avoidance
         """
-        turning_offset_i_ = 0.0
+        turning_offset_i = 0.0
         while rospy.get_time() == 0:
             rospy.get_time()
-        init_time_ = rospy.get_time()
-
+        init_time = rospy.get_time()
         toggle_light_ = 1
 
         while True:
             self.check_for_base_station(self.boxes.boxes)
             x_mean_base = float(self.base.xmin+self.base.xmax)/2.0-320
-            minimum_dist_ = 10.0
+            minimum_dist = 10
             turning_offset = 0.0
-            laser_ = self.laser_mean()
+            laser = self.laser_mean()
 
-            if laser_ <10.0:
-    #            rospy.logerr("MIN DIST SET TO 6")
-                minimum_dist_ = 8.0
-
+            if laser <10.0:
+                minimum_dist = ROVER_MIN_VEL*10
             if toggle_light_ == 1:
                 self.toggle_light(0.6)
                 toggle_light_ = 0
             else:
                 self.toggle_light(0.0)
                 toggle_light_ = 1
+            curr_time = rospy.get_time()
+            # if print_to_terminal:
+            #     print("Time in approaching base station service: {}".format((curr_time - init_time))
 
-            curr_time_ = rospy.get_time()
-            print("TIME")
-            print(curr_time_ - init_time_)
-            if curr_time_ - init_time_ >50:
-                rospy.logerr("Time Out in Approach Base Station")
+            if curr_time - init_time > APPROACH_TIMEOUT:
+                rospy.logerr("Timeout in approach base station service")
                 return 0.0, False
-            print("test")
 
             for obstacle_ in self.obstacles:
                 obstacle_mean_ = float(obstacle_.obstacle.xmin+obstacle_.obstacle.xmax)/2.0-320
-                turning_offset_i_ = turning_offset
+                turning_offset_i = turning_offset
                 if obstacle_.distance > 0.1:
-                    if obstacle_.distance < minimum_dist_:
-                        minimum_dist_ = obstacle_.distance
+                    if obstacle_.distance < minimum_dist:
+                        minimum_dist = obstacle_.distance
                     if obstacle_.distance < 8:
                         turning_offset += np.sign(obstacle_mean_)*0.3*(1-np.abs(obstacle_mean_)/320.0)
-#                print(obstacle_.distance)
-            speed = minimum_dist_/10.0
-            rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i_
-
-            # if turning_offset != 0.0:
-            #  r = rospy.Rate(10)
-            #  print("AVOIDING!!!!!")
-            #  for i in range(20):
-            #      self.drive_crab_motion(speed*0.1, rotation_speed*5)
-            #      r.sleep()
+            speed = minimum_dist/10.0
+            rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i
             self.drive(speed, rotation_speed)
-            if (self.base.xmax-self.base.xmin) > 340 and laser_ < 5.6:
+            if (self.base.xmax-self.base.xmin) > 340 and laser < 5.6:
                 break
         print("Close to base station")
         self.stop()
         return self.laser_mean(), True
-        #range_ = self.range_base_service_call()
 
     def turn_in_place(self, direction):
         """
@@ -199,7 +190,10 @@ class ApproachBaseStationService:
             rospy.sleep(0.05)
 
     def object_distance_estimation(self, object):
-
+        """
+        Estimate distance from arg object to the camera of the robot.
+        Requires disparity image
+        """
         rospy.wait_for_service('cubesat_point_estimation') #Change the name of the service
         object_estimation_call = rospy.ServiceProxy('cubesat_point_estimation', ObjectEstimation)
         try:
@@ -208,16 +202,13 @@ class ApproachBaseStationService:
             print("Service did not process request: " + str(exc))
         return(object_distance)
 
-    def drive_straight(self, time):
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
-        _cmd_message = Twist()
-        _cmd_message.linear.x = 1
-        for i in range(5):
-            _cmd_publisher.publish(_cmd_message)
-            rospy.sleep(0.05)
-        rospy.sleep(time)
-
     def drive(self,speed, heading):
+        """
+        Drive function, send args to the cmd velocity topic
+        Args:
+        speed: linear x velocity of the robot
+        heading: angular z velocity of the robot
+        """
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_message.linear.x = speed
@@ -226,34 +217,36 @@ class ApproachBaseStationService:
             _cmd_publisher.publish(_cmd_message)
             rospy.sleep(0.05)
 
-    def drive_crab_motion(self,x_speed, y_speed):
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
-        _cmd_message = Twist()
-        _cmd_message.linear.x = x_speed
-        _cmd_message.linear.y = y_speed
-        for i in range(5):
-            _cmd_publisher.publish(_cmd_message)
-            rospy.sleep(0.05)
-
-
     def stop(self):
+        """
+        Stop the rover sending zeros cmd velocity
+        """
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 1 )
         _cmd_message = Twist()
         _cmd_publisher.publish(_cmd_message)
         _cmd_publisher.publish(_cmd_message)
 
     def check_for_base_station(self,boxes):
+        """
+        Check if base station exist in the bounding boxes
+        """
         for box in boxes:
             if box.id == 2:
                 self.base = box
 
     def check_for_obstacles(self,boxes):
+        """
+        Check if obstacles exist in the bounding boxes
+        """
         self.obstacle_boxes = []
         for box in boxes:
             if box.id == 4:
                 self.obstacle_boxes.append(box)
 
     def laser_mean(self):
+        """
+        Return the average distance from +- 30 deg from the center of the laser
+        """
         laser = rospy.wait_for_message("laser/scan", LaserScan)
         _val = 0
         _ind = 0
@@ -266,22 +259,30 @@ class ApproachBaseStationService:
             return(_val/_ind)
 
     def face_base(self):
+        """
+        Service to align the rover to the base station using
+        bounding boxes from inference node
+        """
         while True:
             self.check_for_base_station(self.boxes.boxes)
             x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
-            print(-x_mean)
+            if print_to_terminal:
+                print("base station mean in pixels: {}".format(-x_mean))
             self.drive(0.0, -x_mean/640)
-            print(self.base.xmax-self.base.xmin)
             if np.abs(x_mean)<5:
                 break
 
     def toggle_light(self, value):
+        """
+        Service to toggle the lights with float value from zero to one
+        as the light internsity (0 being off and 1 high beam)
+        """
+        rospy.wait_for_service('toggle_light')
         toggle_light_call = rospy.ServiceProxy('toggle_light', ToggleLightSrv)
         try:
             toggle_light_call = toggle_light_call(str(value))
         except rospy.ServiceException as exc:
             print("Service did not process request: " + str(exc))
-
 
     def shutdown(self):
         """

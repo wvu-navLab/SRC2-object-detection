@@ -12,12 +12,14 @@ from src2_object_detection.msg import DetectedBoxes
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 import message_filters #for sincronizing time
+
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 import rospkg
 
+# Deep Learning Libraries
 from keras import backend as K
 from keras.models import load_model
 from keras.preprocessing import image
@@ -30,10 +32,9 @@ import tensorflow as tf
 import glob
 import os
 
-#robot name (make it as a ros param later) ****************************************
-# robot_name = "/scout_1"
 
-#
+print_to_terminal = rospy.get_param('inference/print_to_terminal', False)
+
 # Set the image size.
 img_height = 300
 img_width = 300
@@ -88,15 +89,14 @@ class Object_Detection_Inference:
         #Load some weights into the model.
         weights_path = rospack.get_path('src2_object_detection')+"/src/src2_august2020_weights_02.h5"
         self.model.load_weights(weights_path, by_name=True)
-        # 3: Instantiate an optimizer and the SSD loss function and compile the model.
-        #    If you want to follow the original Caffe implementation, use the preset SGD
-        #    optimizer, otherwise I'd recommend the commented-out Adam optimizer.
+        #Instantiate an optimizer and the SSD loss function and compile the model.
         adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
         #sgd = SGD(lr=0.001, momentum=0.9, decay=0.0, nesterov=False)
         ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
         self.model.compile(optimizer="Adam", loss=ssd_loss.compute_loss)
         self.model._make_predict_function()
-        self.model.summary()        #self.start()
+        if print_to_terminal:
+            self.model.summary()
         self.start()
 
     def stereo_subscriber(self):
@@ -120,7 +120,6 @@ class Object_Detection_Inference:
         self.right_img = right_img
         self.right_cam_info = right_cam_info
 
-
     def start(self):
         """
             Loop through transforming the subscribed img_msg to
@@ -139,28 +138,28 @@ class Object_Detection_Inference:
                 y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
                 y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
                 np.set_printoptions(precision=2, suppress=True, linewidth=90)
-                # print("Predicted boxes:\n")
-                # print('   class   conf xmin   ymin   xmax   ymax')
-                # print(y_pred_thresh[0])
+                if print_to_terminal:
+                    print("Predicted boxes:\n")
+                    print('   class   conf xmin   ymin   xmax   ymax')
+                    print(y_pred_thresh[0])
                 classes = ['background', 'cube_sat', 'base_station',
                 'base_station_marker','obstacle', 'volatile',
                 'crater','rover']
                 boxes.boxes = []
                 for box in y_pred_thresh[0]:
-                    box_ = Box()
-                    box_.id = box[0]
-                    box_.confidence = box[1]
+                    _box = Box()
+                    _box.id = box[0]
+                    _box.confidence = box[1]
                     # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
-                    box_.xmin = box[2] * original_image.shape[1] / img_width
-                    box_.ymin = box[3] * original_image.shape[0] / img_height
+                    _box.xmin = box[2] * original_image.shape[1] / img_width
+                    _box.ymin = box[3] * original_image.shape[0] / img_height
                     if box[4]>300:
                         box[4] = 300
                     if box[5]>300:
                         box[5] = 300
-                    box_.xmax = box[4] * original_image.shape[1] / img_width
-                    box_.ymax = box[5] * original_image.shape[0] / img_height
-
-                    boxes.boxes.append(box_)
+                    _box.xmax = box[4] * original_image.shape[1] / img_width
+                    _box.ymax = box[5] * original_image.shape[0] / img_height
+                    boxes.boxes.append(_box)
                 self.boxes_pub.publish(boxes)
 
     def shutdown(self):
