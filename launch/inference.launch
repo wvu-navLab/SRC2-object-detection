@@ -16,7 +16,7 @@
       <param name="print_to_terminal" type="bool" value="False"/>
     </node>
 
-    <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service_round_1.py" output="screen">
+    <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service.py" output="screen">
       <param name="print_to_terminal" type="bool" value="True"/>
     </node>
 

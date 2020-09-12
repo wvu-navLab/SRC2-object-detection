@@ -30,9 +30,10 @@ from tf import TransformListener, TransformBroadcaster
 import tf.transformations as t_
 import numpy as np
 
-robot_name = "/scout_1"
-robot_base_frame = "scout_1_tf/base_footprint"
-robot_disparity_image_camera_frame = "scout_1_tf/left_camera_optical"
+
+print_to_terminal = rospy.get_param('align_base_station_service/print_to_terminal', False)
+THROTTLE = 0.2
+
 
 class AlignBaseStationService:
     """
@@ -76,16 +77,15 @@ class AlignBaseStationService:
         (without calling the service to score points in qualification round 3)
         """
         rospy.loginfo("Align Base Station Service Started")
-        #self.range = req.range.data
-        #self.true_range = self.laser_mean()
+
         self.true_range = req.range.data
         self.range = self.true_range+1.9
         print("True Range" +str(self.true_range))
-        response_ = self.align()
-        response = AlignBaseStationResponse()
-        resp_ = Bool(response_)
-        response.success = resp_
-        return response
+        response = self.align()
+        response_message = AlignBaseStationResponse()
+        response_value = Bool(response)
+        response_message.success = response_value
+        return response_message
 
     def align(self):
         """
@@ -93,16 +93,17 @@ class AlignBaseStationService:
         until marker is in the center of the image
         """
         counter = 0
-        range_ = 0
+        _range = 0
         while not self.marker_centered():
             curr_dist_ = self.laser_mean()
             if curr_dist_:
-                range_ = curr_dist_
-            range_ = self.range + self.true_range - range_
-            if range_ < 2.0: # Check for unusual laser readings
-                range_ = self.true_range
-            print("Range: "+ str(range_))
-            self.circulate_base_station_service(0.1, range_)
+                _range = curr_dist_
+            _range = self.range + self.true_range - _range
+            if _range < 2.0: # Check for unusual laser readings
+                _range = self.true_range
+            if print_to_terminal:
+                print("Range: "+ str(_range))
+            self.circulate_base_station_service(THROTTLE, _range)
             rospy.sleep(0.7)
             counter +=1
             if counter >15:
@@ -121,7 +122,9 @@ class AlignBaseStationService:
         """
         self.check_for_base_station_marker(self.boxes.boxes)
         if self.marker:
-            print( np.abs((self.marker.xmax+self.marker.xmin)/2.0-320)<5.0)
+            if print_to_terminal:
+                print("Marker center:")
+                print( np.abs((self.marker.xmax+self.marker.xmin)/2.0-320)<5.0)
             if np.abs((self.marker.xmax+self.marker.xmin)/2.0-320)<5.0:
                 return True
         return False
@@ -141,7 +144,9 @@ class AlignBaseStationService:
         while True:
             self.check_for_base_station(self.boxes.boxes)
             x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
-            print(-x_mean)
+            if print_to_terminal:
+                print("Base station center to align:")
+                print(-x_mean)
             self.drive(0.0, -x_mean/640)
             if np.abs(x_mean)<5:
                 break
@@ -150,7 +155,9 @@ class AlignBaseStationService:
         while True:
             self.check_for_base_station_marker(self.boxes.boxes)
             x_mean = float(self.marker.xmin+self.marker.xmax)/2.0-320
-            print(-x_mean)
+            if print_to_terminal:
+                print("Marker center to align:")
+                print(-x_mean)
             self.drive(0.0, -x_mean/1000)
             print(self.marker.xmax-self.marker.xmin)
             if np.abs(x_mean)<5:
@@ -162,7 +169,8 @@ class AlignBaseStationService:
         """
         Service
         """
-        rospy.loginfo("Call Circulate Base Station Service")
+        if print_to_terminal:
+            rospy.loginfo("Call Circulate Base Station Service")
         rospy.wait_for_service('driving/circ_base_station')
         circulate_base_station_service_call = rospy.ServiceProxy('driving/circ_base_station', CirculateBaseStation) # Change the service name when inside launch file
         try:
@@ -170,8 +178,6 @@ class AlignBaseStationService:
         except rospy.ServiceException as exc:
             print("Service did not process request: " + str(exc))
         #Add some exception
-        print(circ_base_)
-        print("Throttle: "+str(throttle))
         return circ_base_
 
     def drive(self, linear_speed, heading, y = 0.0):

@@ -23,7 +23,7 @@ class ObjectEstimationService:
     """
     def __init__(self):
         rospy.loginfo("Object 3D point estimation node is running")
-        s = rospy.Service('cubesat_point_estimation', ObjectEstimation, self.object_estimation_handle)
+        s = rospy.Service('object_estimation', ObjectEstimation, self.object_estimation_handle)
         rospy.spin()
 
     def object_estimation_handle(self,req):
