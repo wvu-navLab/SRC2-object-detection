@@ -1,11 +1,18 @@
 <?xml version="1.0"?>
 
 
+
 <launch>
+
+  <include file="$(find driving_control)/launch/hauler_driving_control.launch"/>
+
+  <include file="$(find wvu_vo_ros)/launch/vo_pipelineHauler.launch"/>
+
   <group ns="hauler_1">
     <param name="/use_sim_time" value="true"/>
     <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen">
     </node>
+
     <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service.py" output="screen">
     </node>
 
@@ -18,6 +25,8 @@
     <node name="plot" pkg="src2_object_detection" type="plot_boxes_real_time.py" output="screen">
     </node>
 
+    <node name="approach_excavator" pkg="src2_object_detection" type="approach_excavator.py" output="screen">
+    </node>
 
   </group>
 </launch>

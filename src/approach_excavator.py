@@ -29,10 +29,10 @@ import tf.transformations as t_
 import numpy as np
 
 
-print_to_terminal = rospy.get_param('approach_base_station_service/print_to_terminal', False)
+print_to_terminal = rospy.get_param('approach_base_station_service/print_to_terminal', True)
 ROVER_MIN_VEL = rospy.get_param('approach_base_station_service/rover_min_vel', 0.8)
 APPROACH_TIMEOUT = rospy.get_param('approach_base_station_service/approach_timeout', 50)
-LASER_RANGE = 4.8
+LASER_RANGE = 2.8
 
 class Obstacle:
     """
@@ -51,13 +51,13 @@ class ApproachBaseStationService:
         """
         """
         rospy.on_shutdown(self.shutdown)
-        self.base = False
+        self.rover = False
         self.obstacles = []
         self.timeout = 60
         self.stereo_subscriber()
         rospy.sleep(2)
         rospy.loginfo("Approach Base Station service node is running")
-        s = rospy.Service('approach_base_station', ApproachBaseStation, self.approach_base_station_handle)
+        s = rospy.Service('approach_excavator', ApproachBaseStation, self.approach_base_station_handle)
         rospy.spin()
 
     def stereo_subscriber(self):
@@ -98,11 +98,11 @@ class ApproachBaseStationService:
         search = False
         for i in range(150):
             self.turn_in_place(-1)
-            self.check_for_base_station(self.boxes.boxes)
-            if self.base:
+            self.check_for_rover(self.boxes.boxes)
+            if self.rover:
                 print("Base Station found")
                 if print_to_terminal:
-                    print(self.base)
+                    print(self.rover)
                 self.stop()
                 _range, search = self.approach_base_station()
                 if print_to_terminal:
@@ -123,7 +123,7 @@ class ApproachBaseStationService:
             rospy.loginfo("Rover approached base station")
         else:
             rospy.logerr("Base Station was not found when running turn in place maneuver or timeout")
-        self.base = False # reset flag variable
+        self.rover = False # reset flag variable
         return response
 
     def approach_base_station(self):
@@ -138,8 +138,8 @@ class ApproachBaseStationService:
         toggle_light_ = 1
 
         while True:
-            self.check_for_base_station(self.boxes.boxes)
-            x_mean_base = float(self.base.xmin+self.base.xmax)/2.0-320
+            self.check_for_rover(self.boxes.boxes)
+            x_mean_base = float(self.rover.xmin+self.rover.xmax)/2.0-320
             minimum_dist = 10
             turning_offset = 0.0
             laser = self.laser_mean()
@@ -166,9 +166,13 @@ class ApproachBaseStationService:
             speed = minimum_dist/10.0
             rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i
             self.drive(speed, rotation_speed)
-            if (self.base.xmax-self.base.xmin) > 340 and laser < LASER_RANGE and laser!=0.0:
+            print("Distance Inference")
+            print(self.object_distance_estimation(self.rover).object_position.point.z)
+            print("Distance Laser")
+            print(laser)
+            if (self.rover.xmax-self.rover.xmin) > 200 and laser< LASER_RANGE and laser!=0.0:
                 break
-        print("Close to base station")
+        print("Close to Excavator")
         self.stop()
         return self.laser_mean(), True
 
@@ -220,13 +224,13 @@ class ApproachBaseStationService:
         _cmd_publisher.publish(_cmd_message)
         _cmd_publisher.publish(_cmd_message)
 
-    def check_for_base_station(self,boxes):
+    def check_for_rover(self,boxes):
         """
         Check if base station exist in the bounding boxes
         """
         for box in boxes:
-            if box.id == 2:
-                self.base = box
+            if box.id == 7:
+                self.rover = box
 
     def check_for_obstacles(self,boxes):
         """
@@ -262,8 +266,8 @@ class ApproachBaseStationService:
         bounding boxes from inference node
         """
         while True:
-            self.check_for_base_station(self.boxes.boxes)
-            x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
+            self.check_for_rover(self.boxes.boxes)
+            x_mean = float(self.rover.xmin+self.rover.xmax)/2.0-320
             if print_to_terminal:
                 print("base station mean in pixels: {}".format(-x_mean))
             self.drive(0.0, -x_mean/640)
