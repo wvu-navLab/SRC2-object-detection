@@ -32,7 +32,7 @@ import numpy as np
 
 
 print_to_terminal = rospy.get_param('align_base_station_service/print_to_terminal', False)
-THROTTLE = 0.2
+THROTTLE = 0.3
 
 
 class AlignBaseStationService:
@@ -104,9 +104,10 @@ class AlignBaseStationService:
             if print_to_terminal:
                 print("Range: "+ str(_range))
             self.circulate_base_station_service(THROTTLE, _range)
-            rospy.sleep(0.7)
+            _,_ = self.laser_alignment()
+#            rospy.sleep(0.7)
             counter +=1
-            if counter >15:
+            if counter >15: # was 15
                 counter = 0
                 rospy.sleep(0.2)
                 self.face_base()
@@ -163,8 +164,6 @@ class AlignBaseStationService:
             if np.abs(x_mean)<5:
                 break
 
-
-
     def circulate_base_station_service(self, throttle, radius):
         """
         Service
@@ -181,7 +180,7 @@ class AlignBaseStationService:
         return circ_base_
 
     def drive(self, linear_speed, heading, y = 0.0):
-        _cmd_publisher = rospy.Publisher(robot_name+"/driving/cmd_vel", Twist, queue_size = 10 )
+        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_message.linear.x = linear_speed
         _cmd_message.linear.y = y
@@ -191,25 +190,9 @@ class AlignBaseStationService:
             rospy.sleep(0.05)
 
     def stop(self):
-        _cmd_publisher = rospy.Publisher(robot_name+"/driving/cmd_vel", Twist, queue_size = 10 )
+        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_publisher.publish(_cmd_message)
-
-    def range_base_service_call(self):
-        """
-        Service that returns the 3D point from the cubesat bounding box
-        disparity and stereo image
-        """
-        rospy.loginfo("Call ObjectEstimation Service")
-        rospy.wait_for_service('range_to_base_service')
-        range_to_base_call = rospy.ServiceProxy('range_to_base_service', RangeToBase) # Change the service name when inside launch file
-        try:
-            range_to_base_call = range_to_base_call(0.4)
-        except rospy.ServiceException as exc:
-            print("Service did not process request: " + str(exc))
-        #Add some exception
-        print(range_to_base_call)
-        return range_to_base_call
 
     def check_for_base_station(self,boxes):
         for box in boxes:
@@ -222,6 +205,9 @@ class AlignBaseStationService:
                 self.marker = box
 
     def laser_mean(self):
+        """
+        Return the average distance from +- 30 deg from the center of the laser
+        """
         laser = rospy.wait_for_message("laser/scan", LaserScan)
         _val = 0
         _ind = 0
@@ -229,9 +215,36 @@ class AlignBaseStationService:
             if not np.isinf(i):
                 _val+=i
                 _ind+=1
-        print("Laser Range")
         if _ind != 0:
-            return(_val/_ind)
+            range = _val/_ind
+            if print_to_terminal:
+                print("Laser Range: {}".format(range))
+            return(range)
+
+    def laser_alignment(self):
+        rospy.loginfo("Laser Alignment")
+        laser = rospy.wait_for_message("laser/scan", LaserScan)
+        print(len(laser.ranges))
+        _val = 0
+        _ind = 0
+        left = 0
+        right = 0
+        for i in laser.ranges[20:50]:
+            if not np.isinf(i):
+                _val+=i
+                _ind+=1
+        if _ind != 0:
+            left = _val/_ind
+        _val = 0
+        _ind = 0
+        for i in laser.ranges[50:80]:
+            if not np.isinf(i):
+                _val+=i
+                _ind+=1
+        if _ind != 0:
+            right = _val/_ind
+            print("Left: {}   Right:  {}".format(left,right))
+            return(left, right)
 
     def shutdown(self):
         """
