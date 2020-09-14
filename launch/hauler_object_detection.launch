@@ -4,17 +4,13 @@
 
 <launch>
 
-  <include file="$(find driving_control)/launch/hauler_driving_control.launch"/>
-
-  <include file="$(find wvu_vo_ros)/launch/vo_pipelineHauler.launch"/>
-
   <group ns="hauler_1">
     <param name="/use_sim_time" value="true"/>
     <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen">
     </node>
 
     <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service.py" output="screen">
-    </node>
+    </node> -->
 
     <node name="object_estimation_service" pkg="src2_object_detection" type="object_estimation_service.py" output="screen">
     </node>
