@@ -21,7 +21,7 @@
     </node>
 
     <node name="align_base_station_service" pkg="src2_object_detection" type="align_base_station_service.py" output="screen">
-      <param name="print_to_terminal" type="bool" value="False"/>
+      <param name="print_to_terminal" type="bool" value="True"/>
     </node>
 
   </group>

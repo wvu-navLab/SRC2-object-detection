@@ -56,7 +56,7 @@ class ApproachBaseStationService:
         self.timeout = 60
         self.stereo_subscriber()
         rospy.sleep(2)
-        rospy.loginfo("Approach Base Station service node is running")
+        rospy.loginfo("Approach Excavator service node is running")
         s = rospy.Service('approach_excavator', ApproachBaseStation, self.approach_base_station_handle)
         rospy.spin()
 

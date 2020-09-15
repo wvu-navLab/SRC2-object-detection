@@ -32,7 +32,7 @@ import numpy as np
 
 
 print_to_terminal = rospy.get_param('align_base_station_service/print_to_terminal', False)
-THROTTLE = 0.3
+THROTTLE = 0.15
 
 
 class AlignBaseStationService:
@@ -105,18 +105,31 @@ class AlignBaseStationService:
                 print("Range: "+ str(_range))
             self.circulate_base_station_service(THROTTLE, _range)
             _,_ = self.laser_alignment()
-#            rospy.sleep(0.7)
-            counter +=1
-            if counter >15: # was 15
-                counter = 0
+            rospy.sleep(0.7)
+            if self.marker:
+                self.marker = False
                 rospy.sleep(0.2)
-                self.face_base()
+                print("MARKER")
+                self.check_for_base_station_marker(self.boxes)
+                if self.marker:
+                    self.fine_aligneemt()
+                    print("FINE")
+
+            counter +=1
+            if counter >25: # was 15
+                counter = 0
+                self.circulate_base_station_service(0.5, _range)
+                rospy.sleep(0.6)
                 self.stop()
+                self.face_base()
         self.stop()
         self.face_marker() # center the marker a last time
         self.stop()
         return True
 
+
+    def fine_aligneemt(self):
+        print("This is fine alignement")
     def marker_centered(self):
         """
 

@@ -97,7 +97,7 @@ class ApproachBaseStationService:
         """
         search = False
         _range = 0.0
-        for i in range(150):
+        for i in range(200):
             self.turn_in_place(-1)
             self.check_for_base_station(self.boxes.boxes)
             if self.base:
@@ -179,7 +179,7 @@ class ApproachBaseStationService:
         """
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
-        _cmd_message.angular.z = 0.5*direction
+        _cmd_message.angular.z = 0.2*direction
         for i in range(2):
             _cmd_publisher.publish(_cmd_message)
             rospy.sleep(0.05)
@@ -227,7 +227,9 @@ class ApproachBaseStationService:
         """
         for box in boxes:
             if box.id == 2:
-                self.base = box
+                if box.confidence>0.85:
+                    print("Base Station")
+                    self.base = box
 
     def check_for_obstacles(self,boxes):
         """
@@ -235,7 +237,7 @@ class ApproachBaseStationService:
         """
         self.obstacle_boxes = []
         for box in boxes:
-            if box.id == 4:
+            if box.id == 4 or box.id == 7:
                 self.obstacle_boxes.append(box)
 
     def laser_mean(self):

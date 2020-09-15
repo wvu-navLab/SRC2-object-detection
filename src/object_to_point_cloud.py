@@ -58,7 +58,7 @@ class ObstaclesToPointCloud:
         """
         self.points = []
         for box in self.boxes.boxes:
-            if box.id == 4 or box.id == 2:
+            if box.id == 4 or box.id == 2 or box.id == 7:
                 self.process_data(box)
 
         # self.cluster_points(thresh = 30)
