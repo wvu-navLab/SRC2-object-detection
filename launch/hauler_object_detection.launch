@@ -1,12 +1,6 @@
 <?xml version="1.0"?>
 
-
-
 <launch>
-
-  <include file="$(find driving_control)/launch/hauler_driving_control.launch"/>
-  <include file="$(find wvu_vo_ros)/launch/vo_pipelineHauler.launch"/>
-
 
   <group ns="hauler_1">
 
