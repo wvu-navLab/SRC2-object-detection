@@ -29,10 +29,11 @@ import tf.transformations as t_
 import numpy as np
 
 
-print_to_terminal = rospy.get_param('approach_base_station_service/print_to_terminal', True)
-ROVER_MIN_VEL = rospy.get_param('approach_base_station_service/rover_min_vel', 0.8)
-APPROACH_TIMEOUT = rospy.get_param('approach_base_station_service/approach_timeout', 50)
-LASER_RANGE = 2.8
+print_to_terminal = rospy.get_param('approach_excavator/print_to_terminal', True)
+ROVER_MIN_VEL = rospy.get_param('approach_excavator/rover_min_vel', 0.8)
+APPROACH_TIMEOUT = rospy.get_param('approach_excavator/approach_timeout', 50)
+LASER_RANGE = rospy.get_param('approach_excavator/laser_range',  2.0)
+
 
 class Obstacle:
     """
@@ -163,6 +164,8 @@ class ApproachBaseStationService:
                         minimum_dist = obstacle_.distance
                     if obstacle_.distance < 8:
                         turning_offset += np.sign(obstacle_mean_)*0.3*(1-np.abs(obstacle_mean_)/320.0)
+            if laser < 5:
+                minimum_dist = 3.0
             speed = minimum_dist/10.0
             rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i
             self.drive(speed, rotation_speed)
