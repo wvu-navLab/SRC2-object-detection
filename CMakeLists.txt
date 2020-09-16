@@ -23,6 +23,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   message_runtime
   message_generation
+  message_filters
+  cv_bridge
   stereo_msgs
   srcp2_msgs
 )
