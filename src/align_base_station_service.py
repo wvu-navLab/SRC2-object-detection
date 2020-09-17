@@ -32,7 +32,7 @@ import numpy as np
 
 
 print_to_terminal = rospy.get_param('align_base_station_service/print_to_terminal', False)
-THROTTLE = 0.15
+THROTTLE = 0.18
 
 
 class AlignBaseStationService:
@@ -82,6 +82,7 @@ class AlignBaseStationService:
         self.range = self.true_range+1.9
         print("True Range" +str(self.true_range))
         response = self.align()
+        print("Alignment Service completed - Return to State Machine")
         response_message = AlignBaseStationResponse()
         response_value = Bool(response)
         response_message.success = response_value
@@ -103,33 +104,39 @@ class AlignBaseStationService:
                 _range = self.true_range
             if print_to_terminal:
                 print("Range: "+ str(_range))
-            self.circulate_base_station_service(THROTTLE, _range)
+            _throttle = THROTTLE/pow(8-np.abs(counter-8),0.5)
+            self.circulate_base_station_service(_throttle, _range)
             _,_ = self.laser_alignment()
             rospy.sleep(0.7)
-            if self.marker:
-                self.marker = False
-                rospy.sleep(0.2)
-                print("MARKER")
-                self.check_for_base_station_marker(self.boxes)
-                if self.marker:
-                    self.fine_aligneemt()
-                    print("FINE")
 
             counter +=1
-            if counter >25: # was 15
+            if counter >14: # was 15
                 counter = 0
-                self.circulate_base_station_service(0.5, _range)
-                rospy.sleep(0.6)
                 self.stop()
                 self.face_base()
         self.stop()
-        self.face_marker() # center the marker a last time
-        self.stop()
-        return True
+        rospy.sleep(2)
+        result = self.fine_aligneemt(_range)
+        return result
 
 
-    def fine_aligneemt(self):
+    def fine_aligneemt(self, _range):
         print("This is fine alignement")
+        #self.face_marker() # center the marker a last time
+        for i in range(10):
+            left_, right_ = self.laser_alignment()
+            _heading = (right_ - left_)/20
+            print("Left - Right: {}".format(_heading))
+            self.drive(0, _heading )
+            self.sleep
+            self.check_for_base_station_marker(self.boxes.boxes)
+            rospy.sleep(0.5)
+            _throttle = ((self.marker.xmax+self.marker.xmin)/2.0-320)/100.0
+            self.circulate_base_station_service(_throttle, _range)
+            rospy.sleep(0.5)
+            return True
+
+
     def marker_centered(self):
         """
 
@@ -138,8 +145,9 @@ class AlignBaseStationService:
         if self.marker:
             if print_to_terminal:
                 print("Marker center:")
-                print( np.abs((self.marker.xmax+self.marker.xmin)/2.0-320)<5.0)
-            if np.abs((self.marker.xmax+self.marker.xmin)/2.0-320)<5.0:
+                print( np.abs((self.marker.xmax+self.marker.xmin)/2.0-320))
+                print("IF Marker is leave loop")
+            if np.abs((self.marker.xmax+self.marker.xmin)/2.0-320)<10.0:
                 return True
         return False
 
@@ -162,7 +170,7 @@ class AlignBaseStationService:
                 print("Base station center to align:")
                 print(-x_mean)
             self.drive(0.0, -x_mean/640)
-            if np.abs(x_mean)<5:
+            if np.abs(x_mean)<8:
                 break
 
     def face_marker(self):
@@ -240,14 +248,17 @@ class AlignBaseStationService:
         print(len(laser.ranges))
         _val = 0
         _ind = 0
-        left = 0
-        right = 0
+        left = 0.0
+        right = 0.0
         for i in laser.ranges[20:50]:
             if not np.isinf(i):
                 _val+=i
                 _ind+=1
         if _ind != 0:
+            print("Laser Left reading error")
             left = _val/_ind
+        else:
+            return 0, 0
         _val = 0
         _ind = 0
         for i in laser.ranges[50:80]:
@@ -256,8 +267,11 @@ class AlignBaseStationService:
                 _ind+=1
         if _ind != 0:
             right = _val/_ind
-            print("Left: {}   Right:  {}".format(left,right))
-            return(left, right)
+        else:
+            print("Laser Right reading error")
+            return 0, 0
+        print("Left: {}   Right:  {}".format(left,right))
+        return(left, right)
 
     def shutdown(self):
         """

@@ -34,8 +34,6 @@ class ObjectEstimationService:
         """
         #rospy.loginfo("Object Estimation Service Started")
         response = ObjectEstimationResponse()
-        rospy.loginfo("Inside Handle Object Estimation")
-        print("YES")
         self.point = Point()
         self.points = []
         self.process_data(req)
@@ -53,7 +51,6 @@ class ObjectEstimationService:
         self.disparity_image = data.disparity_image
         self.bridge = CvBridge()
         self.image = self.bridge.imgmsg_to_cv2(self.disparity_image.image, desired_encoding='passthrough')
-        print("After Using CV bridge")
         self.cx = float(self.disparity_image.valid_window.width+1)/2
         self.cy = float(self.disparity_image.valid_window.height+1)/2
         self.sx = self.disparity_image.f #Focal length
