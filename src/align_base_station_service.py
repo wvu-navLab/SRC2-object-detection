@@ -32,7 +32,7 @@ import numpy as np
 
 
 print_to_terminal = rospy.get_param('align_base_station_service/print_to_terminal', False)
-THROTTLE = 0.18
+THROTTLE = 0.4 #0.22
 
 
 class AlignBaseStationService:
@@ -104,18 +104,18 @@ class AlignBaseStationService:
                 _range = self.true_range
             if print_to_terminal:
                 print("Range: "+ str(_range))
-            _throttle = THROTTLE/pow(8-np.abs(counter-8),0.5)
-            self.circulate_base_station_service(_throttle, _range)
-            _,_ = self.laser_alignment()
-            rospy.sleep(0.7)
+            _throttle = THROTTLE/pow(16.0-np.abs(counter-15.0),0.5)
 
+            self.circulate_base_station_service(_throttle, _range)
+            rospy.sleep(0.25)
             counter +=1
-            if counter >14: # was 15
+            if counter >29: # was 15
                 counter = 0
                 self.stop()
                 self.face_base()
         self.stop()
         rospy.sleep(2)
+        rospy.logerr("FINE ALIGNMENT")
         result = self.fine_aligneemt(_range)
         return result
 
@@ -123,18 +123,30 @@ class AlignBaseStationService:
     def fine_aligneemt(self, _range):
         print("This is fine alignement")
         #self.face_marker() # center the marker a last time
-        for i in range(10):
-            left_, right_ = self.laser_alignment()
-            _heading = (right_ - left_)/20
+        for i in range(5):
+            _left, _right = self.laser_alignment()
+            _heading = (_left - _right)/10
             print("Left - Right: {}".format(_heading))
             self.drive(0, _heading )
-            self.sleep
-            self.check_for_base_station_marker(self.boxes.boxes)
-            rospy.sleep(0.5)
-            _throttle = ((self.marker.xmax+self.marker.xmin)/2.0-320)/100.0
-            self.circulate_base_station_service(_throttle, _range)
-            rospy.sleep(0.5)
-            return True
+            rospy.sleep(0.8)
+            self.stop()
+            for j in range(7):
+                self.check_for_base_station_marker(self.boxes.boxes)
+                _throttle = -((self.marker.xmax+self.marker.xmin)/2.0-320)/80.0
+                if _throttle > 0.25:
+                    _throttle = 0.25
+                if _throttle < -0.25:
+                    _throttle = -0.25
+                print("Throttle: {}", _throttle)
+                #self.circulate_base_station_service(_throttle, _range)
+                self.drive(0.01,0.0,y=_throttle)
+                rospy.sleep(0.9)
+        _left, _right = self.laser_alignment()
+        _heading = (_left - _right)/10
+        print("Left - Right: {}".format(_heading))
+        self.drive(0, _heading )
+
+        return True
 
 
     def marker_centered(self):
@@ -146,8 +158,8 @@ class AlignBaseStationService:
             if print_to_terminal:
                 print("Marker center:")
                 print( np.abs((self.marker.xmax+self.marker.xmin)/2.0-320))
-                print("IF Marker is leave loop")
-            if np.abs((self.marker.xmax+self.marker.xmin)/2.0-320)<10.0:
+                print("If Marker Mean < 20 leave loop")
+            if np.abs((self.marker.xmax+self.marker.xmin)/2.0-320)<25.0:
                 return True
         return False
 
@@ -170,7 +182,7 @@ class AlignBaseStationService:
                 print("Base station center to align:")
                 print(-x_mean)
             self.drive(0.0, -x_mean/640)
-            if np.abs(x_mean)<8:
+            if np.abs(x_mean)<20:
                 break
 
     def face_marker(self):
@@ -203,6 +215,7 @@ class AlignBaseStationService:
     def drive(self, linear_speed, heading, y = 0.0):
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
+        print("y: {}".format(y))
         _cmd_message.linear.x = linear_speed
         _cmd_message.linear.y = y
         _cmd_message.angular.z = heading
@@ -241,6 +254,9 @@ class AlignBaseStationService:
             if print_to_terminal:
                 print("Laser Range: {}".format(range))
             return(range)
+        else:
+            rospy.logerr("Laser Reading Error")
+            return 0.0
 
     def laser_alignment(self):
         rospy.loginfo("Laser Alignment")
