@@ -96,6 +96,7 @@ class ApproachBaseStationService:
         """
         Turn in place to check for base station
         """
+        _range = 0.0
         search = False
         for i in range(150):
             self.turn_in_place(-1)
