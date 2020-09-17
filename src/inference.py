@@ -24,7 +24,8 @@ from keras import backend as K
 from keras.models import load_model
 from keras.preprocessing import image
 from keras.optimizers import Adam
-from models.keras_ssd300 import ssd_300
+from models.keras_ssd300 import ssd_300 # pierluigi ferrari implementation of ssd300
+                                        # https://github.com/pierluigiferrari/ssd_keras
 from keras_loss_function.keras_ssd_loss import SSDLoss
 import tensorflow as tf
 

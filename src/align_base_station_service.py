@@ -15,8 +15,6 @@ from geometry_msgs.msg import Twist
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
 from src2_object_detection.srv import AlignBaseStation, AlignBaseStationResponse
-from range_to_base.srv import RangeToBase, RangeToBaseResponse
-
 from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
@@ -99,6 +97,8 @@ class AlignBaseStationService:
             curr_dist_ = self.laser_mean()
             if curr_dist_:
                 _range = curr_dist_
+            if curr_dist_ <1.8 and curr_dist_ !=0.0:
+                self.drive(-0.3,0.0)
             _range = self.range + self.true_range - _range
             if _range < 2.0: # Check for unusual laser readings
                 _range = self.true_range
@@ -123,28 +123,35 @@ class AlignBaseStationService:
     def fine_aligneemt(self, _range):
         print("This is fine alignement")
         #self.face_marker() # center the marker a last time
+        _left, _right = self.laser_alignment()
+        _heading = (_left - _right)/10
         for i in range(5):
-            _left, _right = self.laser_alignment()
-            _heading = (_left - _right)/10
-            print("Left - Right: {}".format(_heading))
-            self.drive(0, _heading )
-            rospy.sleep(0.8)
-            self.stop()
+
             for j in range(7):
                 self.check_for_base_station_marker(self.boxes.boxes)
-                _throttle = -((self.marker.xmax+self.marker.xmin)/2.0-320)/80.0
+                if _heading < 0.05 and np.abs((self.marker.xmax+self.marker.xmin)/2.0-320) < 6:
+                    rospy.logerr("ALIGNED -> Break")
+                    break
+                _throttle = -((self.marker.xmax+self.marker.xmin)/2.0-320)/120.0
                 if _throttle > 0.25:
                     _throttle = 0.25
                 if _throttle < -0.25:
                     _throttle = -0.25
                 print("Throttle: {}", _throttle)
                 #self.circulate_base_station_service(_throttle, _range)
-                self.drive(0.01,0.0,y=_throttle)
-                rospy.sleep(0.9)
+                self.drive(0.0001,0.0,y=_throttle)
+                rospy.sleep(1.9)
+            _left, _right = self.laser_alignment()
+            _heading = (_left - _right)/10
+            print("Left - Right: {}".format(_heading))
+            self.drive(0, _heading )
+            rospy.sleep(0.8)
+            self.stop()
         _left, _right = self.laser_alignment()
         _heading = (_left - _right)/10
         print("Left - Right: {}".format(_heading))
         self.drive(0, _heading )
+        self.face_marker()
 
         return True
 
