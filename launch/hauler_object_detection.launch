@@ -25,7 +25,7 @@
         <param name="print_to_terminal" type="bool" value="False"/>
         <param name="rover_min_vel" type="double" value="0.8"/>
         <param name="approach_timeout" type="double" value="50"/>
-        <param name="laser_range" type="double" value="2.0"/>
+        <param name="laser_range" type="double" value="3.0"/>
     </node>
 
   </group>
