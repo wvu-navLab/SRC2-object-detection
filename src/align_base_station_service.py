@@ -93,47 +93,68 @@ class AlignBaseStationService:
         """
         counter = 0
         _range = 0
-        _left, _right = self.laser_alignment()
-        _heading = (_left - _right)/10
-        print("Left - Right: {}".format(_heading))
-        while _heading > 0.05:
-            _left, _right = self.laser_alignment()
-            _heading = (_left - _right)/10
-            self.drive(0, _heading )
-
-        rospy.sleep(2.0)
-        self.circulate_base_station_service(0.001, _range)
-        rospy.sleep(2.0)
-        self.turn_wheels_sideways()
-        rospy.sleep(2.2)
-        self.circulate_base_station_service(0.09, _range)
-        print("............")
         while not self.marker_centered():
             curr_dist_ = self.laser_mean()
             if curr_dist_:
-                _range = curr_dist_
-            if curr_dist_ <1.8 and curr_dist_ !=0.0:
-                self.drive(-0.3,0.0)
-            _range = self.range + self.true_range - _range
-            if _range < 2.0: # Check for unusual laser readings
-                _range = self.true_range
-            if print_to_terminal:
-                print("Range: "+ str(_range))
-            _throttle = THROTTLE/pow(32.0-np.abs(counter-30.0),0.5)
-
-            self.circulate_base_station_service(_throttle, _range)
-            rospy.sleep(0.15)
+                range_ = curr_dist_
+            print(range_)
+            print(self.range)
+            print(self.true_range)
+            range_ = self.range + self.true_range - range_
+            print(range_)
+            self.circulate_base_station_service(0.1, range_)
+            rospy.sleep(0.8)
             counter +=1
-            if counter >59: #was 29# was 15
+            if counter >10:
                 counter = 0
-                #self.stop()
+                rospy.sleep(0.2)
                 self.face_base()
-                self.circulate_base_station_service(0.001, _range)
-                rospy.sleep(2.0)
-        self.stop()
-        rospy.sleep(2)
-        rospy.logerr("FINE ALIGNMENT")
-        result = self.fine_aligneemt(_range)
+                self.stop()
+        self.face_marker() # center the marker a last time
+        return True
+        # counter = 0
+        # _range = 0
+        # _left, _right = self.laser_alignment()
+        # _heading = (_left - _right)/10
+        # print("Left - Right: {}".format(_heading))
+        # while _heading > 0.05:
+        #     _left, _right = self.laser_alignment()
+        #     _heading = (_left - _right)/10
+        #     self.drive(0, _heading )
+        #
+        # rospy.sleep(2.0)
+        # self.circulate_base_station_service(0.001, _range)
+        # rospy.sleep(2.0)
+        # self.turn_wheels_sideways()
+        # rospy.sleep(2.2)
+        # self.circulate_base_station_service(0.09, _range)
+        # print("............")
+        # while not self.marker_centered():
+        #     curr_dist_ = self.laser_mean()
+        #     if curr_dist_:
+        #         _range = curr_dist_
+        #     if curr_dist_ <1.8 and curr_dist_ !=0.0:
+        #         self.drive(-0.3,0.0)
+        #     _range = self.range + self.true_range - _range
+        #     if _range < 2.0: # Check for unusual laser readings
+        #         _range = self.true_range
+        #     if print_to_terminal:
+        #         print("Range: "+ str(_range))
+        #     _throttle = THROTTLE/pow(32.0-np.abs(counter-30.0),0.5)
+        #
+        #     self.circulate_base_station_service(_throttle, _range)
+        #     rospy.sleep(0.15)
+        #     counter +=1
+        #     if counter >59: #was 29# was 15
+        #         counter = 0
+        #         #self.stop()
+        #         self.face_base()
+        #         self.circulate_base_station_service(0.001, _range)
+        #         rospy.sleep(2.0)
+        # self.stop()
+        # rospy.sleep(2)
+        # rospy.logerr("FINE ALIGNMENT")
+        # result = self.fine_aligneemt(_range)
         return result
 
 
@@ -229,33 +250,51 @@ class AlignBaseStationService:
             rospy.sleep(0.05)
 
     def face_base(self):
-        self.drive(0.0, 0.002)
-        rospy.sleep(2.0)
         while True:
             self.check_for_base_station(self.boxes.boxes)
             x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
-            if print_to_terminal:
-                print("Base station center to align:")
-                print(-x_mean)
+            print(-x_mean)
             self.drive(0.0, -x_mean/640)
-            if np.abs(x_mean)<20:
+            print(self.base.xmax-self.base.xmin)
+            if np.abs(x_mean)<5:
                 break
-        self.drive(0.0, 0.002)
-        rospy.sleep(2.0)
+
+        # self.drive(0.0, 0.002)
+        # rospy.sleep(2.0)
+        # while True:
+        #     self.check_for_base_station(self.boxes.boxes)
+        #     x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
+        #     if print_to_terminal:
+        #         print("Base station center to align:")
+        #         print(-x_mean)
+        #     self.drive(0.0, -x_mean/640)
+        #     if np.abs(x_mean)<20:
+        #         break
+        # self.drive(0.0, 0.002)
+        # rospy.sleep(2.0)
 
     def face_marker(self):
         while True:
             self.check_for_base_station_marker(self.boxes.boxes)
             x_mean = float(self.marker.xmin+self.marker.xmax)/2.0-320
-            if print_to_terminal:
-                print("Marker center to align:")
-                print(-x_mean)
-            self.drive(0.0, 0.002)
-            rospy.sleep(2.0)
-            self.drive(0.0, -x_mean/1000)
+            print(-x_mean)
+            self.drive(0.0, -x_mean/640)
             print(self.marker.xmax-self.marker.xmin)
-            if np.abs(x_mean)<10:
+            if np.abs(x_mean)<5:
                 break
+
+        # while True:
+        #     self.check_for_base_station_marker(self.boxes.boxes)
+        #     x_mean = float(self.marker.xmin+self.marker.xmax)/2.0-320
+        #     if print_to_terminal:
+        #         print("Marker center to align:")
+        #         print(-x_mean)
+        #     self.drive(0.0, 0.002)
+        #     rospy.sleep(2.0)
+        #     self.drive(0.0, -x_mean/1000)
+        #     print(self.marker.xmax-self.marker.xmin)
+        #     if np.abs(x_mean)<10:
+        #         break
 
     def circulate_base_station_service(self, throttle, radius):
         """
