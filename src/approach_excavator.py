@@ -33,6 +33,7 @@ print_to_terminal = rospy.get_param('approach_excavator/print_to_terminal', True
 ROVER_MIN_VEL = rospy.get_param('approach_excavator/rover_min_vel', 0.8)
 APPROACH_TIMEOUT = rospy.get_param('approach_excavator/approach_timeout', 50)
 LASER_RANGE = rospy.get_param('approach_excavator/laser_range',  2.0)
+ROTATIONAL_SPEED = rospy.get_param('approach_excavator/rotational_speed',  0.25)
 
 
 class Obstacle:
@@ -186,7 +187,7 @@ class ApproachBaseStationService:
         """
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
-        _cmd_message.angular.z = 0.5*direction
+        _cmd_message.angular.z = ROTATIONAL_SPEED*direction
         for i in range(2):
             _cmd_publisher.publish(_cmd_message)
             rospy.sleep(0.05)
