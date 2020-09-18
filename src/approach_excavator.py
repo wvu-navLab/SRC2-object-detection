@@ -274,7 +274,7 @@ class ApproachBaseStationService:
             if print_to_terminal:
                 print("base station mean in pixels: {}".format(-x_mean))
             self.drive(0.0, -x_mean/640)
-            if np.abs(x_mean)<5:
+            if np.abs(x_mean)<15:
                 break
 
     def toggle_light(self, value):
