@@ -20,7 +20,7 @@ from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
 from sensor_msgs.msg import LaserScan
 from srcp2_msgs.srv import LocalizationSrv, AprioriLocationSrv
-from driving_tools.srv import CirculateBaseStation
+from driving_tools.srv import CirculateBaseStation, TurnWheelsSideways, MoveSideways
 import message_filters #for sincronizing time
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -30,7 +30,7 @@ import numpy as np
 
 
 print_to_terminal = rospy.get_param('align_base_station_service/print_to_terminal', False)
-THROTTLE = 0.4 #0.22
+THROTTLE = 0.35 #0.22
 
 
 class AlignBaseStationService:
@@ -125,33 +125,36 @@ class AlignBaseStationService:
         #self.face_marker() # center the marker a last time
         _left, _right = self.laser_alignment()
         _heading = (_left - _right)/10
-        for i in range(5):
-
-            for j in range(7):
+        #self.drive(-0.3,0.0)
+        rospy.sleep(0.7)
+        for i in range(4):
+            self.turn_wheels_sideways()
+            rospy.sleep(1.0)
+            for j in range(8):
                 self.check_for_base_station_marker(self.boxes.boxes)
                 if _heading < 0.05 and np.abs((self.marker.xmax+self.marker.xmin)/2.0-320) < 6:
                     rospy.logerr("ALIGNED -> Break")
                     break
-                _throttle = -((self.marker.xmax+self.marker.xmin)/2.0-320)/120.0
+                _throttle = -((self.marker.xmax+self.marker.xmin)/2.0-320)/80.0
                 if _throttle > 0.25:
                     _throttle = 0.25
                 if _throttle < -0.25:
                     _throttle = -0.25
                 print("Throttle: {}", _throttle)
                 #self.circulate_base_station_service(_throttle, _range)
-                self.drive(0.0001,0.0,y=_throttle)
-                rospy.sleep(1.9)
+                self.drive_y(_throttle)
+                rospy.sleep(0.2)
             _left, _right = self.laser_alignment()
             _heading = (_left - _right)/10
             print("Left - Right: {}".format(_heading))
             self.drive(0, _heading )
-            rospy.sleep(0.8)
+            rospy.sleep(0.5)
             self.stop()
         _left, _right = self.laser_alignment()
         _heading = (_left - _right)/10
         print("Left - Right: {}".format(_heading))
         self.drive(0, _heading )
-        self.face_marker()
+        #self.face_marker()
 
         return True
 
@@ -201,7 +204,7 @@ class AlignBaseStationService:
                 print(-x_mean)
             self.drive(0.0, -x_mean/1000)
             print(self.marker.xmax-self.marker.xmin)
-            if np.abs(x_mean)<5:
+            if np.abs(x_mean)<10:
                 break
 
     def circulate_base_station_service(self, throttle, radius):
@@ -218,6 +221,36 @@ class AlignBaseStationService:
             print("Service did not process request: " + str(exc))
         #Add some exception
         return circ_base_
+
+    def turn_wheels_sideways(self):
+        """
+        Service
+        """
+        if print_to_terminal:
+            rospy.loginfo("Call Turn Wheels Sideways")
+        rospy.wait_for_service('driving/turn_wheels_sideways')
+        turn_wheels = rospy.ServiceProxy('driving/turn_wheels_sideways', TurnWheelsSideways) # Change the service name when inside launch file
+        try:
+            turn_wheels = turn_wheels(True)
+        except rospy.ServiceException as exc:
+            print("Service did not process request: " + str(exc))
+        #Add some exception
+        return turn_wheels
+
+    def drive_y(self, throttle):
+        """
+        Service
+        """
+        if print_to_terminal:
+            rospy.loginfo("Call Move SidewaysService")
+        rospy.wait_for_service('driving/move_sideways')
+        drive_y = rospy.ServiceProxy('driving/move_sideways', MoveSideways) # Change the service name when inside launch file
+        try:
+            drive_y = drive_y(throttle)
+        except rospy.ServiceException as exc:
+            print("Service did not process request: " + str(exc))
+        #Add some exception
+        return drive_y
 
     def drive(self, linear_speed, heading, y = 0.0):
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
