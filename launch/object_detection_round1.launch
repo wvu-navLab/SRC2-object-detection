@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
-  <group ns="scout_1">
+  <group ns="small_scout_1">
     <param name="/use_sim_time" value="true"/>
     <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen">
     </node>

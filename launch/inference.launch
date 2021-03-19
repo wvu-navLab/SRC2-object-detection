@@ -3,7 +3,7 @@
 
 
 <launch>
-  <group ns="small_hauler_1">
+  <group ns="small_scout_1">
 
     <node name="inference" pkg="src2_object_detection" type="inference.py" output="screen">
       <param name="print_to_terminal" type="bool" value="True"/>
