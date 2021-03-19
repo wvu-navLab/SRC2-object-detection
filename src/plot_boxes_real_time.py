@@ -27,25 +27,24 @@ class Object_Detection_Test:
 
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
         left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
-        left_cam_info_sub = message_filters.Subscriber("camera/left/camera_info", CameraInfo)
+        #left_cam_info_sub = message_filters.Subscriber("camera/left/camera_info", CameraInfo)
         right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
-        right_cam_info_sub = message_filters.Subscriber("camera/right/camera_info", CameraInfo)
-        ts = message_filters.ApproximateTimeSynchronizer([boxes_sub,left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],10, 0.1, allow_headerless=True)
+        #right_cam_info_sub = message_filters.Subscriber("camera/right/camera_info", CameraInfo)
+        #ts = message_filters.ApproximateTimeSynchronizer([boxes_sub,left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],10, 0.1, allow_headerless=True)
+        ts = message_filters.ApproximateTimeSynchronizer([boxes_sub,left_img_sub,right_img_sub],10, 0.1, allow_headerless=True)
         ts.registerCallback(self.image_callback)
 
         self.image_pub = rospy.Publisher("BoundingBox/Image", Image, queue_size = 1)
         rospy.spin()
 
 
-    def image_callback(self,boxes,left_img,left_cam_info, right_img, right_cam_info):
+    def image_callback(self,boxes,left_img, right_img):
         """
         Subscriber callback for the stereo camera
         """
         self.boxes = boxes
         self.left_img = left_img
-        self.left_cam_info = left_cam_info
         self.right_img = right_img
-        self.right_cam_info = right_cam_info
         self.start()
 
     def start(self):
@@ -56,8 +55,11 @@ class Object_Detection_Test:
         self.bridge = CvBridge()
         original_left_image = self.bridge.imgmsg_to_cv2(self.left_img, "bgr8")
         original_right_image = self.bridge.imgmsg_to_cv2(self.right_img, "bgr8")
-        label_list = ["background","cubesat","base_station","base_station_marker",
-        "obstacle","volatile","crater","rover"]
+        label_list = ['processing_plant','repair_station','hauler','excavator','scout','obstacles',
+        'bin', 'marker_3_with_orange_background','marker_competition_logo','marker_north_center_nasa',
+        'marker_repair_recharge_station','craters','marker_regolith','marker_19a',
+        'marker_03_white_backgroun','solar_panels_processing_plant','solar_panels_repair_station',
+        'extra_01','extra_02','extra_03','extra_04','extra_05']
         for box in self.boxes.boxes:
             cv2.rectangle(original_left_image,(box.xmin,box.ymin),(box.xmax,box.ymax),[0,255,0],1)
             cv2.putText(original_left_image, label_list[int(box.id)]+": "+str(round(box.confidence, 2)),(box.xmin+1,box.ymax-1),
@@ -72,7 +74,7 @@ class Object_Detection_Test:
 
 def main():
     try:
-    	rospy.init_node('object_detection_test', anonymous=True)
+        rospy.init_node('object_detection_test', anonymous=True)
         object_detection_test = Object_Detection_Test()
 
     except rospy.ROSInterruptException:

@@ -74,7 +74,7 @@ class Object_Detection_Inference:
         self.boxes_pub = rospy.Publisher("DetectedBoxes", DetectedBoxes, queue_size = 1)
         K.clear_session() # Clear previous models from memory.
         self.model = ssd_300(image_size=(img_height, img_width, 3),
-                n_classes=7,
+                n_classes=22,
                 mode='inference',
                 l2_regularization=0.0005,
                 scales=scales,
@@ -88,7 +88,7 @@ class Object_Detection_Inference:
                 subtract_mean=subtract_mean,
                 swap_channels=swap_channels)
         #Load some weights into the model.
-        weights_path = rospack.get_path('src2_object_detection')+"/src/src2_august2020_weights_02.h5"
+        weights_path = rospack.get_path('src2_object_detection')+"/src/src2_final_01-44_loss-3.8235.h5"
         self.model.load_weights(weights_path, by_name=True)
         #Instantiate an optimizer and the SSD loss function and compile the model.
         adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
@@ -106,20 +106,23 @@ class Object_Detection_Inference:
         from the stereo camera
         """
         left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
-        left_cam_info_sub = message_filters.Subscriber("camera/left/camera_info", CameraInfo)
+        print(left_img_sub)
+        #left_cam_info_sub = message_filters.Subscriber("camera/left/camera_info", CameraInfo)
         right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
-        right_cam_info_sub = message_filters.Subscriber("camera/right/camera_info", CameraInfo)
-        ts = message_filters.ApproximateTimeSynchronizer([left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],10, 0.1, allow_headerless=True)
+        #right_cam_info_sub = message_filters.Subscriber("camera/right/camera_info", CameraInfo)
+        #ts = message_filters.ApproximateTimeSynchronizer([left_img_sub,left_cam_info_sub,right_img_sub,right_cam_info_sub],10, 0.1, allow_headerless=True)
+        ts = message_filters.ApproximateTimeSynchronizer([left_img_sub,right_img_sub],10, 0.1, allow_headerless=True)
         ts.registerCallback(self.image_callback)
 
-    def image_callback(self,left_img,left_cam_info, right_img, right_cam_info):
+    #def image_callback(self,left_img,left_cam_info, right_img, right_cam_info):
+    def image_callback(self, left_img, right_img):
         """
         Subscriber callback for the stereo camera, with synchronized images
         """
         self.left_img = left_img
-        self.left_cam_info = left_cam_info
+        #self.left_cam_info = left_cam_info
         self.right_img = right_img
-        self.right_cam_info = right_cam_info
+        #self.right_cam_info = right_cam_info
 
     def start(self):
         """
@@ -131,6 +134,7 @@ class Object_Detection_Inference:
         self.left_img = False
         while not rospy.is_shutdown():
             if self.left_img:
+                print(self.left_img.header)
                 self.bridge = CvBridge()
                 original_image = self.bridge.imgmsg_to_cv2(self.left_img, "rgb8")
                 resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
@@ -143,23 +147,26 @@ class Object_Detection_Inference:
                     print("Predicted boxes:\n")
                     print('   class   conf xmin   ymin   xmax   ymax')
                     print(y_pred_thresh[0])
-                classes = ['background', 'cube_sat', 'base_station',
-                'base_station_marker','obstacle', 'volatile',
-                'crater','rover']
+                classes = ['background', 'processing_plant','repair_station','hauler','excavator','scout','obstacles',
+                'bin', 'marker_3_with_orange_background','marker_competition_logo','marker_north_center_nasa',
+                'marker_repair_recharge_station','craters','marker_regolith','marker_19a',
+                'marker_03_white_backgroun','solar_panels_processing_plant','solar_panels_repair_station',
+                'extra_01','extra_02','extra_03','extra_04','extra_05']
                 boxes.boxes = []
                 for box in y_pred_thresh[0]:
                     _box = Box()
-                    _box.id = box[0]
+                    print("Box:{}".format(box[0]))
+                    _box.id = int(box[0])
                     _box.confidence = box[1]
                     # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
-                    _box.xmin = box[2] * original_image.shape[1] / img_width
-                    _box.ymin = box[3] * original_image.shape[0] / img_height
+                    _box.xmin = int(box[2] * original_image.shape[1] / img_width)
+                    _box.ymin = int(box[3] * original_image.shape[0] / img_height)
                     if box[4]>300:
                         box[4] = 300
                     if box[5]>300:
                         box[5] = 300
-                    _box.xmax = box[4] * original_image.shape[1] / img_width
-                    _box.ymax = box[5] * original_image.shape[0] / img_height
+                    _box.xmax = int(box[4] * original_image.shape[1] / img_width)
+                    _box.ymax = int(box[5] * original_image.shape[0] / img_height)
                     boxes.boxes.append(_box)
                 self.boxes_pub.publish(boxes)
 
@@ -172,7 +179,7 @@ class Object_Detection_Inference:
 
 def main():
     try:
-    	rospy.init_node('object_detection_inference', anonymous=True)
+        rospy.init_node('object_detection_inference', anonymous=True)
         object_detection_test = Object_Detection_Inference()
 
     except rospy.ROSInterruptException:

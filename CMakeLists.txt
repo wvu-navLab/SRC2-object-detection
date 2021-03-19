@@ -26,7 +26,6 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   cv_bridge
   stereo_msgs
-  srcp2_msgs
 )
 
 
@@ -66,7 +65,7 @@ generate_messages(
 # Declare catkin specific configuration to be passed to dependent projects
 ################################################################################
 catkin_package(
-  CATKIN_DEPENDS rospy std_msgs sensor_msgs geometry_msgs nav_msgs tf message_generation message_runtime srcp2_msgs
+  CATKIN_DEPENDS rospy std_msgs sensor_msgs geometry_msgs nav_msgs tf message_generation message_runtime 
 )
 
 ################################################################################
