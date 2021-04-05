@@ -19,15 +19,15 @@
     <node name="object_estimation_service" pkg="src2_object_detection" type="object_estimation_service.py" output="screen">
     </node>
 
-    <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service.py" output="screen">
+<!--     <node name="approach_base_station_service" pkg="src2_object_detection" type="approach_base_station_service.py" output="screen">
     </node>
+ -->
+<!--     <node name="align_base_station_service" pkg="src2_object_detection" type="align_base_station_service.py" output="screen">
+    </node> -->
 
-    <node name="align_base_station_service" pkg="src2_object_detection" type="align_base_station_service.py" output="screen">
+
+<!--     <node name="round3_part1" pkg="src2_object_detection" type="round3_part1.py" output="screen">
     </node>
-
-
-    <node name="round3_part1" pkg="src2_object_detection" type="round3_part1.py" output="screen">
-    </node>
-
+ -->
   </group>
 </launch>

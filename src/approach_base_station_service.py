@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Created on Sun May 17 22:58:24 2020
 
@@ -20,7 +20,7 @@ from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
 from sensor_msgs.msg import LaserScan
-from srcp2_msgs.srv import LocalizationSrv, AprioriLocationSrv, ToggleLightSrv
+from srcp2_msgs.srv import LocalizationSrv, ToggleLightSrv #AprioriLocationSrv,
 import message_filters #for sincronizing time
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
