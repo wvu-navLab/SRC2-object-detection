@@ -235,7 +235,7 @@ class ApproachBaseStationService:
         """
         self.obstacle_boxes = []
         for box in boxes:
-            if box.id == 6:
+            if box.id == 5:
                 self.obstacle_boxes.append(box)
 
     def laser_mean(self):
