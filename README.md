@@ -1,5 +1,5 @@
 # SRC2-object-detection
-
+roslaunch src2_object_detection scout_inference.launch
 # Instructions for launching the Approach base service:
 rosrun  src2_object_detection inference.py
 roslaunch driving_control scout_driving_control_all.launch
@@ -12,7 +12,7 @@ rosservice call /approach_base_station "approach_base_station:
 
 # For visualizing the bounding boxes from the classifier:
 rosrun src2_object_detection plot_boxes_real_time.py
-rosrun image_view image_view image:=/BoundingBox/Image
+rosrun image_view image_view image:=/small_scout_1/BoundingBox/Image
 
 # Disparity images frp, wvu vo (used to obtaint point cloud)
 roslaunch wvu_vo_ros vo_pipeline.launch
