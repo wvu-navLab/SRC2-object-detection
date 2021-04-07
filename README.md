@@ -1,4 +1,7 @@
 # SRC2-object-detection
+Download file from google drive and copy into src folder: https://drive.google.com/file/d/1TRLjFG4XpuVqL1FgiS4T_XAzS-EbcuZ0/view?usp=sharing
+The bounding box IDs are in plot_boxes_real_time.py
+
 roslaunch src2_object_detection scout_inference.launch
 # Instructions for launching the Approach base service:
 rosrun  src2_object_detection inference.py
