@@ -29,10 +29,10 @@ import tf.transformations as t_
 import numpy as np
 
 
-print_to_terminal = rospy.get_param('approach_base_station_service/print_to_terminal', False)
+print_to_terminal = rospy.get_param('approach_base_station_service/print_to_terminal', True)
 ROVER_MIN_VEL = rospy.get_param('approach_base_station_service/rover_min_vel', 0.8)
 APPROACH_TIMEOUT = rospy.get_param('approach_base_station_service/approach_timeout', 50)
-LASER_RANGE = 4.7
+LASER_RANGE = 9
 
 class Obstacle:
     """
@@ -167,7 +167,7 @@ class ApproachBaseStationService:
             speed = minimum_dist/10.0
             rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i
             self.drive(speed, rotation_speed)
-            if (self.base.xmax-self.base.xmin) > 340 and laser < LASER_RANGE and laser!=0.0:
+            if laser < LASER_RANGE and laser!=0.0: #(self.base.xmax-self.base.xmin) > 340 
                 break
         print("Close to base station")
         self.stop()
@@ -179,7 +179,7 @@ class ApproachBaseStationService:
         """
         _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
-        _cmd_message.angular.z = 0.5*direction
+        _cmd_message.angular.z = 0.25*direction
         for i in range(2):
             _cmd_publisher.publish(_cmd_message)
             rospy.sleep(0.05)
@@ -267,8 +267,8 @@ class ApproachBaseStationService:
             x_mean = float(self.base.xmin+self.base.xmax)/2.0-320
             if print_to_terminal:
                 print("base station mean in pixels: {}".format(-x_mean))
-            self.drive(0.0, -x_mean/320) # was 640
-            if np.abs(x_mean)<10: # was 5
+            self.drive(0.0, (-x_mean/320)/4) # was 640
+            if np.abs(x_mean)<40: # was 10
                 break
 
     def toggle_light(self, value):
