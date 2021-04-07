@@ -216,7 +216,7 @@ class ApproachBaseStationService:
         """
         Stop the rover sending zeros cmd velocity
         """
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 1 )
+        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
         _cmd_message = Twist()
         _cmd_publisher.publish(_cmd_message)
         _cmd_publisher.publish(_cmd_message)

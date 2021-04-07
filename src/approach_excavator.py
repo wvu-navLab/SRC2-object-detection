@@ -20,7 +20,7 @@ from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
 from sensor_msgs.msg import LaserScan
-from srcp2_msgs.srv import LocalizationSrv, AprioriLocationSrv, ToggleLightSrv
+from srcp2_msgs.srv import LocalizationSrv, SpotLightSrv #AprioriLocationSrv,
 import message_filters #for sincronizing time
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -149,7 +149,7 @@ class ApproachBaseStationService:
             if laser <10.0:
                 minimum_dist = ROVER_MIN_VEL*10
             if toggle_light_ == 1:
-                self.toggle_light(0.6)
+                self.toggle_light(10)
                 toggle_light_ = 0
             else:
                 self.toggle_light(0.0)
@@ -232,9 +232,10 @@ class ApproachBaseStationService:
     def check_for_rover(self,boxes):
         """
         Check if base station exist in the bounding boxes
+        excavator ID = 3
         """
         for box in boxes:
-            if box.id == 7:
+            if box.id == 3:
                 self.rover = box
 
     def check_for_obstacles(self,boxes):
@@ -243,7 +244,7 @@ class ApproachBaseStationService:
         """
         self.obstacle_boxes = []
         for box in boxes:
-            if box.id == 4:
+            if box.id == 5:
                 self.obstacle_boxes.append(box)
 
     def laser_mean(self):
@@ -284,10 +285,10 @@ class ApproachBaseStationService:
         Service to toggle the lights with float value from zero to one
         as the light internsity (0 being off and 1 high beam)
         """
-        rospy.wait_for_service('toggle_light')
-        toggle_light_call = rospy.ServiceProxy('toggle_light', ToggleLightSrv)
+        rospy.wait_for_service('spot_light')
+        toggle_light_call = rospy.ServiceProxy('spot_light', SpotLightSrv)
         try:
-            toggle_light_call = toggle_light_call(str(value))
+            toggle_light_call = toggle_light_call(float(value))
         except rospy.ServiceException as exc:
             print("Service did not process request: " + str(exc))
 
