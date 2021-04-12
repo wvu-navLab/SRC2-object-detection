@@ -20,8 +20,9 @@ from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
 from sensor_msgs.msg import LaserScan
-from srcp2_msgs.srv import LocalizationSrv, SpotLightSrv #AprioriLocationSrv,
-import message_filters #for sincronizing time
+from srcp2_msgs.srv import LocalizationSrv, SpotLightSrv  # AprioriLocationSrv,
+
+import message_filters  # for sincronizing time
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from tf import TransformListener, TransformBroadcaster
@@ -32,7 +33,8 @@ import numpy as np
 print_to_terminal = rospy.get_param('approach_excavator/print_to_terminal', True)
 ROVER_MIN_VEL = rospy.get_param('approach_excavator/rover_min_vel', 0.8)
 APPROACH_TIMEOUT = rospy.get_param('approach_excavator/approach_timeout', 50)
-LASER_RANGE = rospy.get_param('approach_excavator/laser_range',  2.0)
+# LASER_RANGE = rospy.get_param('approach_excavator/laser_range',  2.0)
+LASER_RANGE = 9
 ROTATIONAL_SPEED = rospy.get_param('approach_excavator/rotational_speed',  0.25)
 
 
@@ -40,15 +42,17 @@ class Obstacle:
     """
     Obstacle Definition
     """
-    def __init__(self,obstacle, distance):
+
+    def __init__(self, obstacle, distance):
         self.obstacle = obstacle
         self.distance = distance
 
 
-class ApproachBaseStationService:
+class ApproachExcavatorService:
     """
-    Service to find the base station and approach it using visual servoing
+    Service to find the excavator and approach it using visual servoing
     """
+
     def __init__(self):
         """
         """
@@ -59,7 +63,8 @@ class ApproachBaseStationService:
         self.stereo_subscriber()
         rospy.sleep(2)
         rospy.loginfo("Approach Excavator service node is running")
-        s = rospy.Service('approach_excavator', ApproachBaseStation, self.approach_base_station_handle)
+        s = rospy.Service('approach_excavator', ApproachBaseStation,
+                          self.approach_excavator_handle)
         rospy.spin()
 
     def stereo_subscriber(self):
@@ -69,7 +74,8 @@ class ApproachBaseStationService:
         """
         disparity_sub = message_filters.Subscriber("disparity", DisparityImage)
         boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
-        ts = message_filters.ApproximateTimeSynchronizer([disparity_sub, boxes_sub],10, 0.1, allow_headerless=True)
+        ts = message_filters.ApproximateTimeSynchronizer(
+            [disparity_sub, boxes_sub], 10, 0.1, allow_headerless=True)
 
         ts.registerCallback(self.image_callback)
 
@@ -83,99 +89,109 @@ class ApproachBaseStationService:
         self.check_for_obstacles(self.boxes.boxes)
         for obstacle in self.obstacle_boxes:
             dist = self.object_distance_estimation(obstacle)
-            self.obstacles.append(Obstacle(obstacle,dist.object_position.point.z))
+            self.obstacles.append(Obstacle(obstacle, dist.object_position.point.z))
 
-    def approach_base_station_handle(self, req):
+    def approach_excavator_handle(self, req):
         """
-        Service for approaching the base station in the SRC qualification
+        Service for approaching the excavator in the SRC qualification
         """
-        response = self.search_for_base_station()
-        rospy.loginfo("Aprroach Base Station Service Started")
+        response = self.search_for_excavator()
+        rospy.loginfo("Aprroach Excavator Service Started")
         return response
 
-    def search_for_base_station(self):
+    def search_for_excavator(self):
         """
-        Turn in place to check for base station
+        Turn in place to check for excavator
         """
         _range = 0.0
         search = False
         for i in range(150):
             self.turn_in_place(-1)
-            self.check_for_rover(self.boxes.boxes)
+            self.check_for_excavator(self.boxes.boxes)
             if self.rover:
-                print("Base Station found")
+                print("Excavator found")
                 if print_to_terminal:
                     print(self.rover)
                 self.stop()
-                _range, search = self.approach_base_station()
+                _range, search = self.approach_excavator()
                 if print_to_terminal:
-                    print("Rover approach to base station was: {}"
-                        "and the laser distance is {}".format(search, _range))
+                    print("Rover approach to excavator was: {}"
+                          "and the laser distance is {}".format(search, _range))
                 if search == True:
-                    self.face_base()
+                    self.face_excavator()
                 self.stop()
                 break
         response = ApproachBaseStationResponse()
         resp = Bool()
         resp.data = search
         response.success = resp
-        base_station_range = Float64()
-        base_station_range.data = float(_range)
-        response.range = base_station_range
+        excavator_range = Float64()
+        excavator_range.data = float(_range)
+        response.range = excavator_range
         if search == True:
-            rospy.loginfo("Rover approached base station")
+            rospy.loginfo("Rover approached Excavator")
         else:
-            rospy.logerr("Base Station was not found when running turn in place maneuver or timeout")
-        self.rover = False # reset flag variable
+            rospy.logerr("Excavator was not found when running turn in place maneuver or timeout")
+        self.rover = False  # reset flag variable
         return response
 
-    def approach_base_station(self):
+    def approach_excavator(self):
         """
-        Visual approach the base station,
+        Visual approach the excavator,
         !!Need to improve robustness by adding some error check and obstacle avoidance
         """
+        print("START approach_excavator")
         turning_offset_i = 0.0
         while rospy.get_time() == 0:
             rospy.get_time()
         init_time = rospy.get_time()
         toggle_light_ = 1
-
+        print("ENTERING WHILE LOOP")
         while True:
-            self.check_for_rover(self.boxes.boxes)
+            print("INSIDE WHILE LOOP")
+            self.check_for_excavator(self.boxes.boxes)
             x_mean_base = float(self.rover.xmin+self.rover.xmax)/2.0-320
             minimum_dist = 10
             turning_offset = 0.0
             laser = self.laser_mean()
-            if laser <10.0:
+            print("LASER : ", laser)
+            if laser < 10.0:
                 minimum_dist = ROVER_MIN_VEL*10
             if toggle_light_ == 1:
                 self.toggle_light(10)
                 toggle_light_ = 0
             else:
-                self.toggle_light(0.0)
+                self.toggle_light(0)
                 toggle_light_ = 1
             curr_time = rospy.get_time()
             if curr_time - init_time > APPROACH_TIMEOUT:
-                rospy.logerr("Timeout in approach base station service")
+                rospy.logerr("Timeout in approach excavator service")
+                print("TIMEOUT !! in approach excavator service")
                 return 0.0, False
             for obstacle_ in self.obstacles:
+                print("ENTERING OBSTACLE LOOP")
                 obstacle_mean_ = float(obstacle_.obstacle.xmin+obstacle_.obstacle.xmax)/2.0-320
                 turning_offset_i = turning_offset
                 if obstacle_.distance > 0.1:
                     if obstacle_.distance < minimum_dist:
                         minimum_dist = obstacle_.distance
                     if obstacle_.distance < 8:
-                        turning_offset += np.sign(obstacle_mean_)*0.3*(1-np.abs(obstacle_mean_)/320.0)
+                        turning_offset += np.sign(obstacle_mean_)*0.3 * \
+                            (1-np.abs(obstacle_mean_)/320.0)
+            print("EXITING OBSTACLE LOOP")
             if laser < 5:
                 minimum_dist = 3.0
             speed = minimum_dist/10.0
+            print("SPEED : ", speed)
             rotation_speed = -x_mean_base/840+turning_offset+0.5*turning_offset_i
+            print("ENTERING DRIVE")
             self.drive(speed, rotation_speed)
             print("Distance Inference")
             print(self.object_distance_estimation(self.rover).object_position.point.z)
             print("Distance Laser")
             print(laser)
-            if (self.rover.xmax-self.rover.xmin) > 200 and laser< LASER_RANGE and laser!=0.0:
+            # (self.rover.xmax-self.rover.xmin) > 200
+            if laser < LASER_RANGE and laser != 0.0:
                 break
         print("Close to Excavator")
         self.stop()
@@ -185,7 +201,7 @@ class ApproachBaseStationService:
         """
         Turn in place clockwise or counter clockwise
         """
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
+        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size=10)
         _cmd_message = Twist()
         _cmd_message.angular.z = ROTATIONAL_SPEED*direction
         for i in range(2):
@@ -197,7 +213,7 @@ class ApproachBaseStationService:
         Estimate distance from arg object to the camera of the robot.
         Requires disparity image
         """
-        rospy.wait_for_service('object_estimation') #Change the name of the service
+        rospy.wait_for_service('object_estimation')  # Change the name of the service
         object_estimation_call = rospy.ServiceProxy('object_estimation', ObjectEstimation)
         try:
             object_distance = object_estimation_call(object, self.disparity)
@@ -205,14 +221,14 @@ class ApproachBaseStationService:
             print("Service did not process request: " + str(exc))
         return(object_distance)
 
-    def drive(self,speed, heading):
+    def drive(self, speed, heading):
         """
         Drive function, send args to the cmd velocity topic
         Args:
         speed: linear x velocity of the robot
         heading: angular z velocity of the robot
         """
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 10 )
+        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size=10)
         _cmd_message = Twist()
         _cmd_message.linear.x = speed
         _cmd_message.angular.z = heading
@@ -224,21 +240,20 @@ class ApproachBaseStationService:
         """
         Stop the rover sending zeros cmd velocity
         """
-        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size = 1 )
+        _cmd_publisher = rospy.Publisher("driving/cmd_vel", Twist, queue_size=1)
         _cmd_message = Twist()
         _cmd_publisher.publish(_cmd_message)
         _cmd_publisher.publish(_cmd_message)
 
-    def check_for_rover(self,boxes):
+    def check_for_excavator(self, boxes):
         """
-        Check if base station exist in the bounding boxes
-        excavator ID = 3
+        Check if excavator exist in the bounding boxes
         """
         for box in boxes:
             if box.id == 3:
                 self.rover = box
 
-    def check_for_obstacles(self,boxes):
+    def check_for_obstacles(self, boxes):
         """
         Check if obstacles exist in the bounding boxes
         """
@@ -256,8 +271,8 @@ class ApproachBaseStationService:
         _ind = 0
         for i in laser.ranges[20:80]:
             if not np.isinf(i):
-                _val+=i
-                _ind+=1
+                _val += i
+                _ind += 1
         if _ind != 0:
             range = _val/_ind
             if print_to_terminal:
@@ -266,18 +281,18 @@ class ApproachBaseStationService:
         else:
             return 0.0
 
-    def face_base(self):
+    def face_excavator(self):
         """
-        Service to align the rover to the base station using
+        Service to align the rover to the excavator using
         bounding boxes from inference node
         """
         while True:
-            self.check_for_rover(self.boxes.boxes)
+            self.check_for_excavator(self.boxes.boxes)
             x_mean = float(self.rover.xmin+self.rover.xmax)/2.0-320
             if print_to_terminal:
                 print("base station mean in pixels: {}".format(-x_mean))
-            self.drive(0.0, -x_mean/640)
-            if np.abs(x_mean)<15:
+            self.drive(0.0, (-x_mean/320)/4)
+            if np.abs(x_mean) < 40:
                 break
 
     def toggle_light(self, value):
@@ -297,15 +312,17 @@ class ApproachBaseStationService:
         Shutdown Node
         """
         self.stop()
-        rospy.loginfo("Approach Base Station service node is shutdown")
+        rospy.loginfo("Approach excavator service node is shutdown")
         rospy.sleep(1)
+
 
 def main():
     try:
-        rospy.init_node('approach_base_station_service',anonymous=True)
-        object_estimation_service_call = ApproachBaseStationService()
+        rospy.init_node('approach_excavator_service', anonymous=True)
+        object_estimation_service_call = ApproachExcavatorService()
     except rospy.ROSInterruptException:
         pass
+
 
 if __name__ == '__main__':
     main()
