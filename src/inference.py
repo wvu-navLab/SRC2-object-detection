@@ -106,7 +106,7 @@ class Object_Detection_Inference:
         from the stereo camera
         """
         left_img_sub = message_filters.Subscriber("camera/left/image_raw", Image)
-        print(left_img_sub)
+        # print(left_img_sub)
         #left_cam_info_sub = message_filters.Subscriber("camera/left/camera_info", CameraInfo)
         right_img_sub = message_filters.Subscriber("camera/right/image_raw", Image)
         #right_cam_info_sub = message_filters.Subscriber("camera/right/camera_info", CameraInfo)
@@ -134,7 +134,7 @@ class Object_Detection_Inference:
         self.left_img = False
         while not rospy.is_shutdown():
             if self.left_img:
-                print(self.left_img.header)
+                # print(self.left_img.header)
                 self.bridge = CvBridge()
                 original_image = self.bridge.imgmsg_to_cv2(self.left_img, "rgb8")
                 resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
@@ -155,7 +155,7 @@ class Object_Detection_Inference:
                 boxes.boxes = []
                 for box in y_pred_thresh[0]:
                     _box = Box()
-                    print("Box:{}".format(box[0]))
+                    # print("Box:{}".format(box[0])) 
                     _box.id = int(box[0])
                     _box.confidence = box[1]
                     # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.

@@ -29,7 +29,7 @@ import tf.transformations as t_
 import numpy as np
 
 
-print_to_terminal = rospy.get_param('approach_base_station_service/print_to_terminal', True)
+print_to_terminal = rospy.get_param('approach_base_station_service/print_to_terminal', False)
 ROVER_MIN_VEL = rospy.get_param('approach_base_station_service/rover_min_vel', 0.8)
 APPROACH_TIMEOUT = rospy.get_param('approach_base_station_service/approach_timeout', 50)
 LASER_RANGE = 9
