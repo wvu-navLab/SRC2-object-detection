@@ -35,9 +35,8 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/JointState.h>
+#include <stereo_msgs/DisparityImage.h>
 #include <std_msgs/Float64.h>
 
 #define PI 3.141592653589793
@@ -49,7 +48,7 @@ public:
     HazardDetection(ros::NodeHandle & nh);
     ~HazardDetection();
     //void laserCallback(const sensor_msgs::LaserScan::ConstPtr &msg);
-    void imageCallback(const sensor_msgs::ImageConstPtr& msgl, const sensor_msgs::CameraInfoConstPtr& info_msgl, const sensor_msgs::ImageConstPtr& msgr, const sensor_msgs::CameraInfoConstPtr& info_msgr);
+    void disparityCallback(const stereo_msgs::DisparityImagePtr &msg);
     void jointStateCallback(const sensor_msgs::JointState::ConstPtr &msg);
     void odometryCallback(const nav_msgs::Odometry::ConstPtr &msg);
 
@@ -64,35 +63,15 @@ private:
     ros::NodeHandle & nh_;
 
     // Subscribers
-    message_filters::Subscriber<sensor_msgs::Image> right_image_sub;
-    message_filters::Subscriber<sensor_msgs::Image> left_image_sub;
-    message_filters::Subscriber<sensor_msgs::CameraInfo> right_info_sub;
-    message_filters::Subscriber<sensor_msgs::CameraInfo> left_info_sub;
-
-    // Subscribers
+    ros::Subscriber subDisparity;
     ros::Subscriber subJointStates;
     ros::Subscriber subOdometry;
-    
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::Image, sensor_msgs::CameraInfo> MySyncPolicy;
-    
-    // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-    message_filters::Synchronizer<MySyncPolicy> sync; 
-        
-    int ximg,yimg;
-    
-    int iLowH_, iHighH_, iLowS_, iHighS_, iLowV_, iHighV_;
-    
-    double currSensorYaw_;
 
+    double currSensorYaw_;
     double currSensorPitch_;
+        
+    cv::Mat disparity_image_;
     
-    int direction_;
-    
-    cv::Mat raw_imagel_, raw_imager_;
-    sensor_msgs::CameraInfo info_msgl_, info_msgr_;
-    double x_, y_, z_;
-    
-    bool static compareKeypoints(const cv::KeyPoint &k1, const cv::KeyPoint &k2);
 };
 
 #endif // HAZARD_DETECTION_H
