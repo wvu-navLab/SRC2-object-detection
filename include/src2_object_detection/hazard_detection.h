@@ -50,7 +50,7 @@ public:
     //void laserCallback(const sensor_msgs::LaserScan::ConstPtr &msg);
     void disparityCallback(const stereo_msgs::DisparityImagePtr &msg);
     void jointStateCallback(const sensor_msgs::JointState::ConstPtr &msg);
-    void odometryCallback(const nav_msgs::Odometry::ConstPtr &msg);
+    void odometryCallback(const nav_msgs::Odometry::ConstPtr& msg);
 
     static void CallBackFunc(int event, int x, int y, int flags, void* userdata);
     void CallBackFunc(int event, int x, int y, int flags);
@@ -69,8 +69,13 @@ private:
 
     double currSensorYaw_;
     double currSensorPitch_;
-        
+
+    bool firstOdom_ = false;
+   
+    nav_msgs::Odometry currOdom_;
+
     cv::Mat disparity_image_;
+
     
 };
 

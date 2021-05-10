@@ -42,7 +42,6 @@ HazardDetection::HazardDetection(ros::NodeHandle & nh)
   subOdometry = nh_.subscribe("localization/odometry/sensor_fusion", 1, &HazardDetection::odometryCallback, this);
   subJointStates = nh_.subscribe("joint_states", 1, &HazardDetection::jointStateCallback, this);
   subDisparity = nh_.subscribe("disparity", 1, &HazardDetection::disparityCallback, this);
-
   
   currSensorYaw_=0.0;
   currSensorPitch_=0.0;
@@ -52,6 +51,15 @@ HazardDetection::HazardDetection(ros::NodeHandle & nh)
 HazardDetection::~HazardDetection()
 {
   cv::destroyAllWindows();
+}
+
+void HazardDetection::odometryCallback(const nav_msgs::Odometry::ConstPtr& msg)
+{
+    if (firstOdom_ == false)
+    {
+        firstOdom_ = true;
+    }
+    currOdom_ = *msg;
 }
 
 void HazardDetection::jointStateCallback(const sensor_msgs::JointState::ConstPtr &msg)
@@ -81,9 +89,9 @@ void HazardDetection::disparityCallback(const stereo_msgs::DisparityImagePtr& ms
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg->image, sensor_msgs::image_encodings::BGR8);
-#ifdef SHOWIMG     
-    cv::imshow("originall", cv_ptr->image);
-#endif    
+    #ifdef SHOWIMG     
+        cv::imshow("original", cv_ptr->image);
+    #endif    
   }
   catch (cv_bridge::Exception& e)
   {
@@ -113,12 +121,12 @@ void HazardDetection::ComputeHazards()
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "find_rover");
+  ros::init(argc, argv, "hazard_detection");
   ros::NodeHandle nh("");
   ros::Rate rate(50);
 
-  ROS_INFO("Find Rover Node initializing...");
-  HazardDetection find_rover(nh);
+  ROS_INFO("Hazard Detection Node initializing...");
+  HazardDetection hazard_detection(nh);
 
   while(ros::ok()) 
   {
