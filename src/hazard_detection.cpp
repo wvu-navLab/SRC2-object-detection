@@ -38,23 +38,10 @@ HazardDetection::HazardDetection(ros::NodeHandle & nh)
   cv::startWindowThread(); 
   cv::setMouseCallback("originall", CallBackFunc, this);
 #endif  
-  
-  
-  pubMultiAgentState = nh_.advertise<move_excavator::MultiAgentState>("/multiAgent", 1000);
-  
-  pubTarget = nh_.advertise<geometry_msgs::PointStamped>("manipulation/target_bin", 1000);
-  
-  pubSensorYaw = nh_.advertise<std_msgs::Float64>("sensor/yaw/command/position", 1000);
 
-  // Service Servers
-  serverFindHauler = nh_.advertiseService("manipulation/find_hauler", &HazardDetection::FindHauler, this);
-  
-  // Service Clients
-  clientSpotLight = nh_.serviceClient<srcp2_msgs::SpotLightSrv>("spot_light");
-  
-  // Subscribers
-  //subLaserScan = nh_.subscribe("laser/scan", 1000, &HazardDetection::laserCallback, this);
-  
+
+  // Subscribers  
+  subOdometry = nh_.subscribe("localization/odometry/sensor_fusion", 1, &HazardDetection::odometryCallback, this);
   subJointStates = nh_.subscribe("joint_states", 1, &HazardDetection::jointStateCallback, this);
   
   right_image_sub.subscribe(nh_,"camera/right/image_raw", 1);
@@ -83,35 +70,6 @@ HazardDetection::~HazardDetection()
   cv::destroyAllWindows();
 }
 
-/*void HazardDetection::laserCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
-{
-  int size = msg->ranges.size();
-  int minIndex = 0;
-  int maxIndex = size-1; 
-  int closestIndex = -1;
-  double minVal = 999; //values are between 0.2 and 30 meters for my scanner
-
-  for (int i = minIndex; i < maxIndex; i++)
-  {
-      if ((msg->ranges[i] <= minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
-      {
-          minVal = msg->ranges[i];
-          closestIndex = i;
-      }
-  }
-  //ROS_INFO_STREAM("Minimum distance in Lidar view: " << msg->ranges[closestIndex]);
-
-  if(msg->ranges[closestIndex] < 0.8)
-  {
-    m.isRoverInRange = true;
-  }
-  else
-  {
-    m.isRoverInRange = false;
-  }
-  pubMultiAgentState.publish(m);
-}*/
-
 
 bool HazardDetection::compareKeypoints(const cv::KeyPoint &k1, const cv::KeyPoint &k2)
 {
@@ -123,153 +81,24 @@ void HazardDetection::jointStateCallback(const sensor_msgs::JointState::ConstPtr
 {
   // Find current angles and position
   int sensor_bar_yaw_joint_idx;
+  int sensor_bar_pitch_joint_idx;
 
   // loop joint states
   for (int i = 0; i < msg->name.size(); i++) {
     if (msg->name[i] == "sensor_bar_yaw_joint") {
       sensor_bar_yaw_joint_idx = i;
     }
+    if (msg->name[i] == "sensor_bar_pitch_joint") {
+      sensor_bar_yaw_joint_idx = i;
+    }
   }
 
  currSensorYaw_ = msg->position[sensor_bar_yaw_joint_idx];  
-}
-
-bool HazardDetection::FindHauler(move_excavator::FindHauler::Request  &req, move_excavator::FindHauler::Response &res)
-{
-
-  ROS_INFO("Service FindHauler Called");
-  //turn on the light
-  srcp2_msgs::SpotLightSrv srv;
-  srv.request.range = 20;
-  clientSpotLight.call(srv);
-  
-  ros::Duration timeout(req.timeLimit);
-	
-  cv::Mat hsv_imagel;
-  // Setup SimpleBlobDetector parameters.
-  cv::SimpleBlobDetector::Params params;
-
-  // Filter by Area.
-  params.filterByColor = false;
-  params.blobColor = 255;
-
-  // Filter by Area.
-  params.filterByArea = true;
-  params.minArea = 5000;
-  params.maxArea = 2000000;
-
-  // Filter by Circularity
-  params.filterByCircularity = false;
-  params.minCircularity = 0.1;
-
-  // Filter by Convexity
-  params.filterByConvexity = false;
-  params.minConvexity = 0.1;
-
-  // Filter by Inertia
-  params.filterByInertia = false;
-  params.minInertiaRatio = 0.01;
-  
-  // SimpleBlobDetector::create creates a smart pointer.
-  // Set up detector with params
-  cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
-
-  // Detect blobs.
-  std::vector<cv::KeyPoint> keypointsl, keypointsr;
-  
-  std_msgs::Float64 nextAngle;
-  
-  long int currentFrameId;
-  
-  ros::Time start_time = ros::Time::now();
-     
-  do{
-  
-  	ros::spinOnce();
-  	currentFrameId = target_.header.seq;
-  	cv::cvtColor(raw_imagel_, hsv_imagel, CV_BGR2HSV);
- 	// cv::imshow("hsv_imagel", hsv_imagel);
-    
-  	cv::Mat imgThresholdedl;
-  	cv::inRange(hsv_imagel, cv::Scalar(iLowH_, iLowS_, iLowV_), cv::Scalar(iHighH_, iHighS_, iHighV_), imgThresholdedl); 
-  	cv::dilate(imgThresholdedl,imgThresholdedl, cv::Mat(), cv::Point(-1, -1), 2);
-  	cv::erode(imgThresholdedl,imgThresholdedl, cv::Mat(), cv::Point(-1, -1), 3);
-   
-  	detector->detect( imgThresholdedl, keypointsl);
-  
-  	// Draw detected blobs as red circles.
-  
-//#ifdef SHOWIMG  
-  	//cv::Mat im_with_keypointsl; 
-  	//cv::drawKeypoints( imgThresholdedl, keypointsl, im_with_keypointsl, cv::Scalar(0,0,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-  	//imshow("blobsl", im_with_keypointsl);
-//#endif
-	
-	
-	if (keypointsl.size() > 0)
-  	{
- 		// Sort the keypoints in order of area
- 		std::sort(keypointsl.begin(), keypointsl.end(), compareKeypoints);
- 	 	
- 		/*for (int i=0;i<keypointsl.size();i++){
- 		ROS_INFO("Left: Area %f", keypointsl[i].size);
- 		}
- 	
- 		ROS_INFO("____");*/
- 	
- 	
- 		int i=0; // Get the larger keypoints in each camera
- 	
- 	        // Error to the center of the image
- 		double error = (raw_imagel_.cols)/2.0-keypointsl[i].pt.x;
- 		//ROS_INFO("Error %f, Center: %f, Keypoint: %f", error, (raw_imagel_.cols)/2.0, keypointsl[i].pt.x );
- 		
- 		if (fabs(error) < 5){
- 		
- 			ros::spinOnce();
- 			ros::Duration(0.5).sleep();
- 		        ComputeHaulerPosition();
- 		        
- 			res.success = true;
- 			res.target = target_;
- 			return true;
- 		}
- 		 
-   	        nextAngle.data= currSensorYaw_+sgn(error)*M_PI/90;   	       
-                pubSensorYaw.publish(nextAngle);
- 	
-   	}
-   	else 
-   	{
-   	       
-   	       if (currSensorYaw_<-(M_PI-M_PI/4))
-   	       	direction_ = 1;
-   	       if (currSensorYaw_>(M_PI-M_PI/4))
-   	       	direction_ = -1;	
-   	       nextAngle.data=(currSensorYaw_+direction_*M_PI/45);
-   	       
-               pubSensorYaw.publish(nextAngle);
-               
-   	}
-   	// Wait for new frame -> this is important to free the processor
-   	while ((currentFrameId == target_.header.seq) && ((ros::Time::now() - start_time) < timeout)){
-   		ros::spinOnce();
-   		ros::Duration(0.03).sleep();
-   	}
-   		
-   }	
-   while ((ros::Time::now() - start_time) < timeout);
-   ROS_INFO("TimeOut");
-	
-   res.success = false;
-   return true;
-   
+ currSensorPitch_ = msg->position[sensor_bar_pitch_joint_idx]; 
 }
 
 void HazardDetection::imageCallback(const sensor_msgs::ImageConstPtr& msgl, const sensor_msgs::CameraInfoConstPtr& info_msgl, const sensor_msgs::ImageConstPtr& msgr, const sensor_msgs::CameraInfoConstPtr& info_msgr)
 {
-  
-
   cv_bridge::CvImagePtr cv_ptr;
   try
   {
@@ -302,15 +131,13 @@ void HazardDetection::imageCallback(const sensor_msgs::ImageConstPtr& msgl, cons
 
   raw_imager_ = cv_ptr->image;
   info_msgr_ = *info_msgr;
-  
-  target_.header = msgl->header;
-  
+    
   ////////////////////////////////////////
   
 }
       
       
-void HazardDetection::ComputeHaulerPosition()
+void HazardDetection::ComputeHazards()
 {    
   cv::Mat hsv_imagel;
   cv::cvtColor(raw_imagel_, hsv_imagel, CV_BGR2HSV);
