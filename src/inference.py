@@ -121,7 +121,7 @@ class Object_Detection_Inference:
         """
         self.left_img = left_img
         #self.left_cam_info = left_cam_info
-        self.right_img = right_img
+        #self.right_img = right_img
         #self.right_cam_info = right_cam_info
 
     def start(self):
@@ -133,8 +133,9 @@ class Object_Detection_Inference:
         """
         self.left_img = False
         while not rospy.is_shutdown():
-            if self.left_img:
-                # print(self.left_img.header)
+            if (self.left_img) and (self.left_img.header.seq!=-1):
+                #print(self.left_img.header)           	 
+                self.left_img.header.seq=-1
                 self.bridge = CvBridge()
                 original_image = self.bridge.imgmsg_to_cv2(self.left_img, "rgb8")
                 resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
