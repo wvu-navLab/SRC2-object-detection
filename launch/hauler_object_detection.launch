@@ -21,8 +21,8 @@
     <node name="plot" pkg="src2_object_detection" type="plot_boxes_real_time.py" output="screen">
     </node>
 
-    <node name="approach_excavator" pkg="src2_object_detection" type="approach_excavator.py" output="screen">
-        <param name="print_to_terminal" type="bool" value="False"/>
+    <node name="approach_bin" pkg="src2_object_detection" type="approach_bin.py" output="screen">
+        <param name="print_to_terminal" type="bool" value="True"/>
         <param name="rover_min_vel" type="double" value="0.6"/>
         <param name="approach_timeout" type="double" value="50"/>
         <param name="laser_range" type="double" value="3.0"/>

@@ -88,3 +88,12 @@ install(PROGRAMS
 
 install(DIRECTORY launch/
 	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+##########################
+#######EXECUTABLES########
+##########################
+add_executable(hazard_detection src/hazard_detection.cpp)
+target_link_libraries(hazard_detection
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+)
