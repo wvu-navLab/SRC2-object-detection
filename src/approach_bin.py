@@ -15,7 +15,7 @@ from geometry_msgs.msg import Twist
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
 from src2_object_detection.srv import ObjectEstimation, ObjectEstimationResponse
-from src2_object_detection.srv import ApproachBaseStation, ApproachBaseStationResponse
+from src2_object_detection.srv import ApproachBin, ApproachBinResponse
 from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
@@ -63,7 +63,7 @@ class ApproachbinService:
         self.stereo_subscriber()
         rospy.sleep(2)
         rospy.loginfo("Approach bin service node is running")
-        s = rospy.Service('approach_bin', ApproachBaseStation,
+        s = rospy.Service('approach_bin_service', ApproachBin,
                           self.approach_bin_handle)
         rospy.spin()
 
@@ -123,7 +123,7 @@ class ApproachbinService:
                 self.stop()
 
                 break
-        response = ApproachBaseStationResponse()
+        response = ApproachBinResponse()
         resp = Bool()
         resp.data = search
         response.success = resp
@@ -170,17 +170,17 @@ class ApproachbinService:
                 rospy.logerr("Timeout in approach bin service")
                 print("TIMEOUT !! in approach bin service")
                 return 0.0, False
-            for obstacle_ in self.obstacles:
-                print("ENTERING OBSTACLE LOOP")
-                obstacle_mean_ = float(obstacle_.obstacle.xmin+obstacle_.obstacle.xmax)/2.0-320
-                turning_offset_i = turning_offset
-                if obstacle_.distance > 0.1:
-                    if obstacle_.distance < minimum_dist:
-                        minimum_dist = obstacle_.distance
-                    if obstacle_.distance < 8:
-                        turning_offset += np.sign(obstacle_mean_)*0.3 * \
-                            (1-np.abs(obstacle_mean_)/320.0)
-            print("EXITING OBSTACLE LOOP")
+            # for obstacle_ in self.obstacles:
+            #     print("ENTERING OBSTACLE LOOP")
+            #     obstacle_mean_ = float(obstacle_.obstacle.xmin+obstacle_.obstacle.xmax)/2.0-320
+            #     turning_offset_i = turning_offset
+            #     if obstacle_.distance > 0.1:
+            #         if obstacle_.distance < minimum_dist:
+            #             minimum_dist = obstacle_.distance
+            #         if obstacle_.distance < 8:
+            #             turning_offset += np.sign(obstacle_mean_)*0.3 * \
+            #                 (1-np.abs(obstacle_mean_)/320.0)
+            # print("EXITING OBSTACLE LOOP")
             if laser < 5:
                 minimum_dist = 3.0
             speed = minimum_dist/10.0
@@ -197,7 +197,7 @@ class ApproachbinService:
                 break
         print("Close to bin")
         print("BEGIN DUMPING")
-        self.hauler_dump(2.0)
+        # self.hauler_dump(2.0)
 
         self.stop()
         return self.laser_mean(), True
@@ -306,7 +306,7 @@ class ApproachbinService:
             if print_to_terminal:
                 print("base station mean in pixels: {}".format(-x_mean))
             self.drive(0.0, (-x_mean/320)/4)
-            if np.abs(x_mean) < 200:
+            if np.abs(x_mean) < 100:
                 break
 
     def hauler_dump(self, value):
@@ -361,7 +361,7 @@ class ApproachbinService:
 
 def main():
     try:
-        rospy.init_node('approach_bin_service', anonymous=True)
+        rospy.init_node('approach_bin', anonymous=True)
         object_estimation_service_call = ApproachbinService()
     except rospy.ROSInterruptException:
         pass

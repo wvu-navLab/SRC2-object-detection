@@ -15,7 +15,7 @@ from geometry_msgs.msg import Twist
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
 from src2_object_detection.srv import ObjectEstimation, ObjectEstimationResponse
-from src2_object_detection.srv import ApproachBaseStation, ApproachBaseStationResponse
+from src2_object_detection.srv import ApproachExcavator, ApproachExcavatorResponse
 from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Range
@@ -63,7 +63,7 @@ class ApproachExcavatorService:
         self.stereo_subscriber()
         rospy.sleep(2)
         rospy.loginfo("Approach Excavator service node is running")
-        s = rospy.Service('approach_excavator', ApproachBaseStation,
+        s = rospy.Service('approach_excavator_service', ApproachExcavator,
                           self.approach_excavator_handle)
         rospy.spin()
 
@@ -121,7 +121,7 @@ class ApproachExcavatorService:
                     self.face_excavator()
                 self.stop()
                 break
-        response = ApproachBaseStationResponse()
+        response = ApproachExcavatorResponse()
         resp = Bool()
         resp.data = search
         response.success = resp
@@ -318,7 +318,7 @@ class ApproachExcavatorService:
 
 def main():
     try:
-        rospy.init_node('approach_excavator_service', anonymous=True)
+        rospy.init_node('approach_excavator', anonymous=True)
         object_estimation_service_call = ApproachExcavatorService()
     except rospy.ROSInterruptException:
         pass

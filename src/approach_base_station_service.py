@@ -57,7 +57,7 @@ class ApproachBaseStationService:
         self.stereo_subscriber()
         rospy.sleep(2)
         rospy.loginfo("Approach Base Station service node is running")
-        s = rospy.Service('approach_base_station', ApproachBaseStation, self.approach_base_station_handle)
+        s = rospy.Service('approach_base_station_service', ApproachBaseStation, self.approach_base_station_handle)
         rospy.spin()
 
     def stereo_subscriber(self):
@@ -293,7 +293,7 @@ class ApproachBaseStationService:
 
 def main():
     try:
-        rospy.init_node('approach_base_station_service',anonymous=True)
+        rospy.init_node('approach_base_station',anonymous=True)
         object_estimation_service_call = ApproachBaseStationService()
     except rospy.ROSInterruptException:
         pass

@@ -47,6 +47,8 @@ add_service_files(
   FindCubesat.srv
   ApproachBaseStation.srv
   AlignBaseStation.srv
+  ApproachBin.srv
+  ApproachExcavator.srv
 )
 generate_messages(
 	DEPENDENCIES
