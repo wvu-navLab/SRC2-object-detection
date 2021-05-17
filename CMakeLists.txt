@@ -49,6 +49,7 @@ add_service_files(
   AlignBaseStation.srv
   ApproachBin.srv
   ApproachExcavator.srv
+  FindObject.srv
 )
 generate_messages(
 	DEPENDENCIES
@@ -67,7 +68,7 @@ generate_messages(
 # Declare catkin specific configuration to be passed to dependent projects
 ################################################################################
 catkin_package(
-  CATKIN_DEPENDS rospy std_msgs sensor_msgs geometry_msgs nav_msgs tf message_generation message_runtime 
+  CATKIN_DEPENDS rospy std_msgs sensor_msgs geometry_msgs nav_msgs tf message_generation message_runtime
 )
 
 ################################################################################
