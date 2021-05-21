@@ -72,8 +72,6 @@ class ObjectDetectionInference:
         self.images = {key: None for key in list_of_robots}
         self.image_subscriber()
         rospack = rospkg.RosPack()
-        self.box_pub = rospy.Publisher("Box", Box,queue_size=1)
-        self.boxes_pub = rospy.Publisher("DetectedBoxes", DetectedBoxes, queue_size = 1)
         K.clear_session() # Clear previous models from memory.
         self.model = ssd_300(image_size=(img_height, img_width, 3),
                 n_classes=22,
@@ -126,10 +124,8 @@ class ObjectDetectionInference:
         rospy.spin()
 
     def find_object_service_handler(self,request):
-        print(request)
         if (self.images[request.robot_name]):
-            #print(self.left_img.header)
-#            self.images[request.robot_name].header.seq=-1
+
             self.bridge = CvBridge()
             original_image = self.bridge.imgmsg_to_cv2(self.images[request.robot_name], "rgb8")
             resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
