@@ -45,10 +45,6 @@ add_service_files(
   FILES
   ObjectEstimation.srv
   FindCubesat.srv
-  ApproachBaseStation.srv
-  AlignBaseStation.srv
-  ApproachBin.srv
-  ApproachExcavator.srv
   FindObject.srv
 )
 generate_messages(
