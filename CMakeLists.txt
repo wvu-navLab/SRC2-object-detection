@@ -26,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   cv_bridge
   stereo_msgs
+  src2_approach_services
 )
 
 
