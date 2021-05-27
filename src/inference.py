@@ -5,7 +5,7 @@ Created on Sun May 17 22:58:24 2020
 
 @author: Chris Tatsch
 """
-# ROS Libraries
+# ROS Libraries TODO: NOT NEEDED ANYMORE
 import rospy
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
