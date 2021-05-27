@@ -20,10 +20,10 @@ import numpy as np
 import rospkg
 
 # Deep Learning Libraries
-from keras import backend as K
-from keras.models import load_model
-from keras.preprocessing import image
-from keras.optimizers import Adam
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.optimizers import Adam
 from models.keras_ssd300 import ssd_300 # pierluigi ferrari implementation of ssd300
                                         # https://github.com/pierluigiferrari/ssd_keras
 from keras_loss_function.keras_ssd_loss import SSDLoss
@@ -95,7 +95,7 @@ class ObjectDetectionInference:
         #sgd = SGD(lr=0.001, momentum=0.9, decay=0.0, nesterov=False)
         ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
         self.model.compile(optimizer="Adam", loss=ssd_loss.compute_loss)
-        self.model._make_predict_function()
+        self.model.make_predict_function()
         if print_to_terminal:
             self.model.summary()
         self.start()
