@@ -1,7 +1,0 @@
-<launch>
-
-  <include file="$(find driving_control)/launch/scout_driving_control_all.launch"/>
-  <include file="$(find laser_tools_src2)/launch/scout_laser_tools_R3.launch" />
-  <include file="$(find wvu_vo_ros)/launch/vo_pipelineScout.launch"/>
-
-</launch>

@@ -14,9 +14,11 @@ import rospy
 from std_msgs.msg import Bool
 from src2_object_detection.msg import Box
 from src2_object_detection.msg import DetectedBoxes
+from src2_object_detection.srv import FindObject, FindObjectResponse, FindObjectRequest
 from stereo_msgs.msg import DisparityImage
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point
+from std_msgs.msg import String
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
@@ -24,60 +26,111 @@ import std_msgs.msg
 import sensor_msgs.point_cloud2 as pcl2
 import message_filters #for sincronizing time
 
-class ObstaclesToPointCloud:
+list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_hauler_1","small_excavator_1"]) #List of robots that are being used
+
+
+class ObstaclesToPointCloudMultipleRovers:
     """
     Convert obstacles bounding boxes to point cloud
     """
     def __init__(self):
         rospy.loginfo("Node for converting obstacles to point cloud using disparity image is on")
-        self.point_cloud_publisher = rospy.Publisher("inference/point_cloud", PointCloud2, queue_size = 1 )
-        self.stereo_subscriber()
-        self.seg_points = {}
-        self.filtered_points = []
-        rospy.sleep(8)
-        rospy.spin()
+        rospy.on_shutdown(self.shutdown)
+        self.rgb_images = {key: None for key in list_of_robots}
+        self.disparity_images = {key: None for key in list_of_robots}
+        self.point_cloud_publishers = {key: rospy.Publisher(key+"/inference/point_cloud",
+                                        PointCloud2, queue_size = 1 ) for key in list_of_robots}
+        self.publisher = rospy.Publisher("Dummy_plublisher", String, queue_size =1)
 
-    def stereo_subscriber(self):
-        """
-        Define the Subscriber with time synchronization among the image topics
-        from the stereo camera
-        """
-        disparity_sub = message_filters.Subscriber("disparity", DisparityImage)
-        boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
-        ts = message_filters.ApproximateTimeSynchronizer([disparity_sub,boxes_sub], 10, 0.1, allow_headerless=True)
-        ts.registerCallback(self.image_callback)
+        self.images_subscriber()
 
-    def image_callback(self, disparity,boxes):
-        """
-        Subscriber callback for the disparity images and bounding boxes
-        """
-        self.disparity = disparity
-        self.boxes = boxes
-        self.convert_to_point_cloud()
+#        self.stereo_subscriber()
+#        self.seg_points = {}
+#        self.filtered_points = []
+        rospy.sleep(3)
+        self.detect_obstacles()
 
-    def convert_to_point_cloud(self):
+
+
+    def images_subscriber(self):
+        """
+        Define the Subscriber with for multiple robots left image and disparity topics
+        (later might need to change back to message filter to improve performance)
+        """
+        for robot in list_of_robots:
+            rospy.Subscriber(robot+"/camera/left/image_raw", Image, self.image_callback, robot)
+            rospy.Subscriber(robot+"/disparity", DisparityImage, self.disparity_callback, robot)
+
+        #disparity_sub = message_filters.Subscriber("disparity", DisparityImage)
+        #boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
+        #ts = message_filters.ApproximateTimeSynchronizer([disparity_sub,boxes_sub], 10, 0.1, allow_headerless=True)
+        #ts.registerCallback(self.image_callback)
+
+    def image_callback(self, img,robot):
+        """
+        Subscriber callback for the stereo camera, with synchronized images
+        """
+        self.rgb_images[robot] = img
+
+    def disparity_callback(self, disparity_img,robot):
+        """
+        Subscriber callback for the stereo camera, with synchronized images
+        """
+        self.disparity_images[robot] = disparity_img
+
+    def detect_obstacles(self):
+        """
+        Loop to run object detection and convert to point cloud for all the robot
+        """
+        rate = rospy.Rate(5) # ROS Rate at 5Hz
+        watch_dog_timer = 0
+        while not rospy.is_shutdown():
+            #DO OPENCV STUFF HERE
+            #####################
+            #####################
+            #####################
+
+            watch_dog_timer +=1
+            if watch_dog_timer >5: # run inference at slower rate
+                watch_dog_timer = 0
+                for robot in list_of_robots:
+                    rospy.wait_for_service('/find_object')
+                    _find_object =rospy.ServiceProxy('/find_object', FindObject)
+                    try:
+                        _find_object = _find_object(robot_name = robot)
+                    except rospy.ServiceException as exc:
+                        print("Service did not process request: " + str(exc))
+                    robot_boxes = _find_object.boxes
+                    self.convert_box_to_point_cloud(robot_boxes,robot)
+
+            self.publisher.publish(String("Hi"))
+            print("rgb")
+            print(self.rgb_images['small_scout_1'].header.stamp)
+            print("disparity")
+            print(self.disparity_images['small_scout_1'].header.stamp)
+            rate.sleep()
+
+    def convert_box_to_point_cloud(self, robot_boxes, robot_name):
         """
         Convert to point cloud and publish
         """
         self.points = []
-        for box in self.boxes.boxes:
-            if box.id == 4 or box.id == 2 or box.id == 7:
-                self.process_data(box)
-
+        for box in robot_boxes.boxes:
+            if box.id == 5 or box.id == 1 or box.id == 0:
+                self.process_data(box,robot_name)
         # self.cluster_points(thresh = 30)
-
         scaled_polygon_pcl = PointCloud2()
-        scaled_polygon_pcl = pcl2.create_cloud_xyz32(self.boxes.header, self.points)
-        self.point_cloud_publisher.publish(scaled_polygon_pcl)
+        scaled_polygon_pcl = pcl2.create_cloud_xyz32(robot_boxes.header, self.points)
+        self.point_cloud_publishers[robot_name].publish(scaled_polygon_pcl)
 
-    def process_data(self, bounding_box):
+    def process_data(self, bounding_box,robot_name):
         """
         Convert image to numpy array using opencv bridge and
         get camera parameters. Loop through the bounding box
         coordinates to calculate the 3D points
         """
         self.bounding_box = bounding_box
-        self.disparity_image = self.disparity
+        self.disparity_image = self.disparity_images[robot_name]
         self.bridge = CvBridge()
         self.image = self.bridge.imgmsg_to_cv2(self.disparity_image.image, desired_encoding='passthrough')
         self.cx = float(self.disparity_image.valid_window.width+1)/2
@@ -147,10 +200,17 @@ class ObstaclesToPointCloud:
             if len(self.seg_points[ind]) > thresh:
                 self.filtered_points.extend(val)
 
+    def shutdown(self):
+        """
+        Shutdown Node
+        """
+        rospy.loginfo("Obstacle Detection Node is shutdown")
+        rospy.sleep(3)
+
 def main():
     try:
-        rospy.init_node('object_to_point_cloud',anonymous=True)
-        obstacles_to_point_cloud = ObstaclesToPointCloud()
+        rospy.init_node('obstacles_to_point_cloud',anonymous=True)
+        obstacles_to_point_cloud = ObstaclesToPointCloudMultipleRovers()
     except rospy.ROSInterruptException:
         pass
 if __name__ == '__main__':
