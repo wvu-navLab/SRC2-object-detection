@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node name="inference_services" pkg="src2_object_detection" type="inference_service.py" output="screen">
+  </node>
+
+  <node name="obstacle_detection" pkg="src2_object_detection" type="obstacle_detection_multiple_rovers.py" output="screen">
+  </node>
+
+
+</launch>
