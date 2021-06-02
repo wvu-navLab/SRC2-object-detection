@@ -102,12 +102,7 @@ class ObstaclesToPointCloudMultipleRovers:
                         print("Service did not process request: " + str(exc))
                     robot_boxes = _find_object.boxes
                     self.convert_box_to_point_cloud(robot_boxes,robot)
-
             self.publisher.publish(String("Hi"))
-            print("rgb")
-            print(self.rgb_images['small_scout_1'].header.stamp)
-            print("disparity")
-            print(self.disparity_images['small_scout_1'].header.stamp)
             rate.sleep()
 
     def convert_box_to_point_cloud(self, robot_boxes, robot_name):
