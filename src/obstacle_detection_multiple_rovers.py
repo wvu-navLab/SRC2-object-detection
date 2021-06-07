@@ -27,6 +27,7 @@ import sensor_msgs.point_cloud2 as pcl2
 import message_filters #for sincronizing time
 
 list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_hauler_1","small_excavator_1"]) #List of robots that are being used
+#list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2", "small_excavator_1"]) #List of robots that are being used
 
 
 class ObstaclesToPointCloudMultipleRovers:
@@ -102,12 +103,7 @@ class ObstaclesToPointCloudMultipleRovers:
                         print("Service did not process request: " + str(exc))
                     robot_boxes = _find_object.boxes
                     self.convert_box_to_point_cloud(robot_boxes,robot)
-
             self.publisher.publish(String("Hi"))
-            print("rgb")
-            print(self.rgb_images['small_scout_1'].header.stamp)
-            print("disparity")
-            print(self.disparity_images['small_scout_1'].header.stamp)
             rate.sleep()
 
     def convert_box_to_point_cloud(self, robot_boxes, robot_name):
