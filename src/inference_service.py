@@ -36,8 +36,7 @@ import os
 
 print_to_terminal = rospy.get_param('inference/print_to_terminal', False)
 
-# list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_hauler_1","small_excavator_1"]) #List of robots that are being used
-list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2", "small_excavator_1"]) #List of robots that are being used
+list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_hauler_1","small_excavator_1"]) #List of robots that are being used
 # Set the image size.
 img_height = 300
 img_width = 300
@@ -89,7 +88,7 @@ class ObjectDetectionInference:
                 subtract_mean=subtract_mean,
                 swap_channels=swap_channels)
         #Load some weights into the model.
-        weights_path = rospack.get_path('src2_object_detection')+"/src/src2_final_01-44_loss-3.8235.h5"
+        weights_path = rospack.get_path('src2_object_detection')+"/src/src2_finals_04.h5"
         self.model.load_weights(weights_path, by_name=True)
         #Instantiate an optimizer and the SSD loss function and compile the model.
         adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
