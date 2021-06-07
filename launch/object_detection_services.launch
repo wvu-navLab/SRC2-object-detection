@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node name="object_estimation_service" pkg="src2_object_detection" type="object_estimation_service.py" output="screen">
+  </node>
+
+</launch>
