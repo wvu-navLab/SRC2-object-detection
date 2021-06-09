@@ -26,7 +26,8 @@ import std_msgs.msg
 import sensor_msgs.point_cloud2 as pcl2
 import message_filters #for sincronizing time
 
-list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2","small_hauler_1","small_hauler_2","small_excavator_1","small_excavator_2"]) #List of robots that are being used
+# list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2","small_hauler_1","small_hauler_2","small_excavator_1","small_excavator_2"]) #List of robots that are being used
+list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2","small_hauler_1","small_excavator_1"]) #List of robots that are being used
 #list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2", "small_excavator_1"]) #List of robots that are being used
 
 
@@ -112,7 +113,8 @@ class ObstaclesToPointCloudMultipleRovers:
         """
         self.points = []
         for box in robot_boxes.boxes:
-            if box.id == 5 or box.id == 1 or box.id == 0:
+            if (box.id == 0 or box.id == 1 or box.id == 2 or 
+            box.id == 3 or box.id == 4 or box.id == 5 or box.id == 6):
                 self.process_data(box,robot_name)
         # self.cluster_points(thresh = 30)
         scaled_polygon_pcl = PointCloud2()
