@@ -27,8 +27,7 @@ import sensor_msgs.point_cloud2 as pcl2
 import message_filters #for sincronizing time
 
 # list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2","small_hauler_1","small_hauler_2","small_excavator_1","small_excavator_2"]) #List of robots that are being used
-list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2","small_hauler_1","small_excavator_1"]) #List of robots that are being used
-#list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2", "small_excavator_1"]) #List of robots that are being used
+list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2", "small_excavator_1"]) #List of robots that are being used
 
 
 class ObstaclesToPointCloudMultipleRovers:
@@ -38,8 +37,8 @@ class ObstaclesToPointCloudMultipleRovers:
     def __init__(self):
         rospy.loginfo("Node for converting obstacles to point cloud using disparity image is on")
         rospy.on_shutdown(self.shutdown)
-        self.rgb_images = {key: None for key in list_of_robots}
-        self.disparity_images = {key: None for key in list_of_robots}
+        self.rgb_images = {key: Image() for key in list_of_robots}
+        self.disparity_images = {key: DisparityImage() for key in list_of_robots}
         self.point_cloud_publishers = {key: rospy.Publisher(key+"/inference/point_cloud",
                                         PointCloud2, queue_size = 1 ) for key in list_of_robots}
         self.publisher = rospy.Publisher("Dummy_plublisher", String, queue_size =1)
@@ -86,6 +85,7 @@ class ObstaclesToPointCloudMultipleRovers:
         """
         rate = rospy.Rate(5) # ROS Rate at 5Hz
         watch_dog_timer = 0
+        robot_boxes = DetectedBoxes()
         while not rospy.is_shutdown():
             #DO OPENCV STUFF HERE
             #####################
@@ -113,7 +113,7 @@ class ObstaclesToPointCloudMultipleRovers:
         """
         self.points = []
         for box in robot_boxes.boxes:
-            if (box.id == 0 or box.id == 1 or box.id == 2 or 
+            if (box.id == 0 or box.id == 1 or box.id == 2 or
             box.id == 3 or box.id == 4 or box.id == 5 or box.id == 6):
                 self.process_data(box,robot_name)
         # self.cluster_points(thresh = 30)
