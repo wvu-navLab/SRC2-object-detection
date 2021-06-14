@@ -26,9 +26,7 @@ import std_msgs.msg
 import sensor_msgs.point_cloud2 as pcl2
 import message_filters #for sincronizing time
 
-# list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2","small_hauler_1","small_hauler_2","small_excavator_1","small_excavator_2"]) #List of robots that are being used
-list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2", "small_hauler_1", "small_excavator_1"]) #List of robots that are being used
-
+list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_hauler_1", "small_excavator_1"]) #List of robots that are being used
 
 class ObstaclesToPointCloudMultipleRovers:
     """
@@ -42,13 +40,8 @@ class ObstaclesToPointCloudMultipleRovers:
         self.point_cloud_publishers = {key: rospy.Publisher(key+"/inference/point_cloud",
                                         PointCloud2, queue_size = 1 ) for key in list_of_robots}
         self.publisher = rospy.Publisher("Dummy_plublisher", String, queue_size =1)
-
         self.images_subscriber()
-
-#        self.stereo_subscriber()
-#        self.seg_points = {}
-#        self.filtered_points = []
-        rospy.sleep(3)
+        rospy.sleep(1)
         self.detect_obstacles()
 
 
@@ -61,11 +54,6 @@ class ObstaclesToPointCloudMultipleRovers:
         for robot in list_of_robots:
             rospy.Subscriber(robot+"/camera/left/image_raw", Image, self.image_callback, robot)
             rospy.Subscriber(robot+"/disparity", DisparityImage, self.disparity_callback, robot)
-
-        #disparity_sub = message_filters.Subscriber("disparity", DisparityImage)
-        #boxes_sub = message_filters.Subscriber("DetectedBoxes", DetectedBoxes)
-        #ts = message_filters.ApproximateTimeSynchronizer([disparity_sub,boxes_sub], 10, 0.1, allow_headerless=True)
-        #ts.registerCallback(self.image_callback)
 
     def image_callback(self, img,robot):
         """

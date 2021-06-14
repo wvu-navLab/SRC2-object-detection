@@ -91,11 +91,6 @@ class Object_Detection_Inference:
         #Load some weights into the model.
         weights_path = rospack.get_path('src2_object_detection')+"/src/src2_finals_04.h5"
         self.model.load_weights(weights_path, by_name=True)
-        #Instantiate an optimizer and the SSD loss function and compile the model.
-        #adam = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-        #sgd = SGD(lr=0.001, momentum=0.9, decay=0.0, nesterov=False)
-        #ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
-        #self.model.compile(optimizer="Adam", loss=ssd_loss.compute_loss)
         self.model.make_predict_function()
         if print_to_terminal:
             self.model.summary()

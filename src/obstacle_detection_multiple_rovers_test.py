@@ -28,6 +28,7 @@ from sensor_msgs.msg import CameraInfo
 import std_msgs.msg
 import sensor_msgs.point_cloud2 as pcl2
 import message_filters #for sincronizing time
+import rospkg
 
 # list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2","small_hauler_1","small_hauler_2","small_excavator_1","small_excavator_2"]) #List of robots that are being used
 list_of_robots = rospy.get_param('robots_list', ["small_scout_1","small_hauler_1","small_excavator_1"]) #List of robots that are being used
@@ -42,6 +43,14 @@ def display_inlier_outlier(cloud, ind):
     outlier_cloud.paint_uniform_color([1, 0, 0])
     inlier_cloud.paint_uniform_color([0.8, 0.8, 0.8])
     o3d.visualization.draw_geometries([inlier_cloud, outlier_cloud])
+
+def draw_registration_result(source, target, transformation):
+    source_temp = copy.deepcopy(source)
+    target_temp = copy.deepcopy(target)
+    source_temp.paint_uniform_color([1, 0.706, 0])
+    target_temp.paint_uniform_color([0, 0.651, 0.929])
+    source_temp.transform(transformation)
+    o3d.visualization.draw_geometries([source_temp, target_temp])
 
 
 class ObstaclesToPointCloudMultipleRovers:
@@ -159,13 +168,14 @@ class ObstaclesToPointCloudMultipleRovers:
         open3d_cloud.points = o3d.utility.Vector3dVector(np.array(self.points))
         open3d_cloud.colors = o3d.utility.Vector3dVector(np.array(self.color)/255.0)
 
-        print(dir(open3d_cloud))
+        rospack = rospkg.RosPack()
         o3d.visualization.draw_geometries([open3d_cloud])
-        target = o3d.io.read_point_cloud("../pcd/repair_station.pcd")
-        o3d.visualization.draw_geometries([target])
+        o3d.io.write_point_cloud(rospack.get_path('src2_object_detection')+"/pcl/perpective_01.pcd", open3d_cloud)
+#        target = o3d.io.read_point_cloud(rospack.get_path('src2_object_detection')+"/pcl/repair_station.pcd")
 
-        #voxel_down_pcd = open3d_cloud.voxel_down_sample(voxel_size=0.02)
-        #print("Statistical oulier removal")
+
+            #voxel_down_pcd = open3d_cloud.voxel_down_sample(voxel_size=0.02)
+            #print("Statistical oulier removal")
         #cl, ind = voxel_down_pcd.remove_statistical_outlier(nb_neighbors=20,
         #                                                std_ratio=2.0)
         #display_inlier_outlier(voxel_down_pcd, ind)
