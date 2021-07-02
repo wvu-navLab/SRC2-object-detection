@@ -57,7 +57,7 @@ class HaulerParkingPosition:
         self.right_boxes = DetectedBoxes()
 
         #Turn left:
-        print("Left")
+        print("Turning Left (10seconds)")
         self.mast_camera_publisher.publish(np.pi/2.0)
         rospy.sleep(12)
         rospy.wait_for_service('/find_object')
@@ -70,7 +70,7 @@ class HaulerParkingPosition:
         self.left_boxes = _find_object.boxes
 
         #Turn Right
-        print("Right")
+        print("Turning Right (20seconds)")
         self.mast_camera_publisher.publish(-np.pi/2.0)
         rospy.sleep(20)
         rospy.wait_for_service('/find_object')
@@ -104,6 +104,7 @@ class HaulerParkingPosition:
         print("Side: {}".format(side))
         if side == "left":
             x,y = self.get_left_pose(excavator_orientation_euler[2])
+            new_orientation = list(excavator_orientation_euler)
             new_orientation[2] =  new_orientation[2] - np.pi/2.0
             new_orientation_quat = t_.quaternion_from_euler(new_orientation[0],
                                                             new_orientation[1],
@@ -119,18 +120,16 @@ class HaulerParkingPosition:
                                                             new_orientation[2])
 
 
-        new_orientation = list(excavator_orientation_euler)
-        print(new_orientation)
-        new_orientation[2] =  new_orientation[2] + np.pi/2.0
-        print(new_orientation)
-        new_orientation_quat = t_.quaternion_from_euler(new_orientation[0],
-                                                        new_orientation[1],
-                                                        new_orientation[2])
+        print("Perpendicular Orientation: {}".format(new_orientation_quat))
 
         best_position = WhereToParkHaulerResponse()
         best_position.pose.position.x = x
         best_position.pose.position.y = y
-        print(new_orientation_quat)
+        best_position.pose.orientation.x = new_orientation_quat[0]
+        best_position.pose.orientation.y = new_orientation_quat[1]
+        best_position.pose.orientation.z = new_orientation_quat[2]
+        best_position.pose.orientation.w = new_orientation_quat[3]
+        best_position.side = side
         #best_position.pose.orientation = new_orientation_quat
         return(best_position)
 
@@ -149,7 +148,7 @@ class HaulerParkingPosition:
             return "left"
 
     def get_right_pose(self, heading):
-        x = self.excavator_pose.position.x + DISTANCE*np.sin(heading+np.pi)
+        x = self.excavator_pose.position.x + DISTANCE*np.sin(heading)
         y = self.excavator_pose.position.y + DISTANCE*np.cos(heading+np.pi)
         print(x)
         print(y)
