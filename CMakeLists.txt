@@ -47,6 +47,7 @@ add_service_files(
   ObjectEstimation.srv
   FindCubesat.srv
   FindObject.srv
+  WhereToParkHauler.srv
 )
 generate_messages(
 	DEPENDENCIES
@@ -88,4 +89,3 @@ install(PROGRAMS
 
 install(DIRECTORY launch/
 	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
