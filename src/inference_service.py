@@ -20,6 +20,8 @@ import numpy as np
 import rospkg
 
 # Deep Learning Libraries
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
@@ -31,7 +33,6 @@ import tensorflow as tf
 
 # System Libraries
 import glob
-import os
 
 
 print_to_terminal = rospy.get_param('inference/print_to_terminal', False)
