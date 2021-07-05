@@ -72,7 +72,7 @@ class HaulerParkingPosition:
         #Turn Right
         print("Turning Right (20seconds)")
         self.mast_camera_publisher.publish(-np.pi/2.0)
-        rospy.sleep(20)
+        rospy.sleep(24)
         rospy.wait_for_service('/find_object')
         _find_object =rospy.ServiceProxy('/find_object', FindObject)
         try:

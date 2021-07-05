@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node name="hauler_parking_position_service" pkg="src2_object_detection" type="hauler_parking_position_service.py" output="screen">
+  </node>
+
+</launch>
