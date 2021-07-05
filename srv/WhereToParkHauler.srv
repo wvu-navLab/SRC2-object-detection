@@ -1,4 +1,4 @@
 std_msgs/Bool data
 ---
 geometry_msgs/Pose pose
-string side
+int8 side

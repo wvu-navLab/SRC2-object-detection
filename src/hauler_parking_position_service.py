@@ -129,7 +129,10 @@ class HaulerParkingPosition:
         best_position.pose.orientation.y = new_orientation_quat[1]
         best_position.pose.orientation.z = new_orientation_quat[2]
         best_position.pose.orientation.w = new_orientation_quat[3]
-        best_position.side = side
+        if side == "left":  
+            best_position.side = 1
+        if side == "right":
+            best_position.side = -1
         #best_position.pose.orientation = new_orientation_quat
         return(best_position)
 
