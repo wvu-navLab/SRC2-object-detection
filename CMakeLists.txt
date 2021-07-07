@@ -108,5 +108,9 @@ install(PROGRAMS src/models/keras_ssd7.py src/models/keras_ssd300.py src/models/
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/models
 )
 
+install(FILES src/src2_finals_04.h5  
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/src
+)
+
 install(DIRECTORY launch/
 	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
