@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 An encoder that converts ground truth annotations to SSD-compatible training targets.
 

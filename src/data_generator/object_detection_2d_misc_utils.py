@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 Miscellaneous data generator utilities.
 

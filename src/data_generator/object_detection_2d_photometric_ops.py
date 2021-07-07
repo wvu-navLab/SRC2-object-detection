@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 Various photometric image transformations, both deterministic and probabilistic.
 

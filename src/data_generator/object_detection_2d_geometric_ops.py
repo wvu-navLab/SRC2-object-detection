@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 Various geometric image transformations for 2D object detection, both deterministic
 and probabilistic.

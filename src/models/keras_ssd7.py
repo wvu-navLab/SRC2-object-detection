@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 A small 7-layer Keras model with SSD architecture. Also serves as a template to build arbitrary network architectures.
 

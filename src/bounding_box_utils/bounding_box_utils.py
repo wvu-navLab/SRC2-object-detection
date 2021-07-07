@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 Includes:
 * Function to compute the IoU similarity for axis-aligned, rectangular, 2D bounding boxes

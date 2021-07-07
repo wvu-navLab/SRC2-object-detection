@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 A custom Keras layer to decode the raw SSD prediction output. This is a modified
 and more efficient version of the `DetectionOutput` layer type in the original Caffe

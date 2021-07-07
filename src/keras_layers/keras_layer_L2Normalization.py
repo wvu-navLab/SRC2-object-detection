@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 A custom Keras layer to perform L2-normalization.
 Copyright (C) 2018 Pierluigi Ferrari

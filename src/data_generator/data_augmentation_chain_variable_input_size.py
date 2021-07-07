@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 A data augmentation pipeline suitable for variable-size images that produces effects
 that are similar (but not identical) to those of the original SSD data augmentation

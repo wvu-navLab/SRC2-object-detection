@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 Includes:
 * Functions to decode and filter raw SSD model output. These are only needed if the

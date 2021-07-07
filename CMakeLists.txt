@@ -83,14 +83,30 @@ include_directories(
 # Install
 ################################################################################
 install(PROGRAMS src/hauler_parking_position_service.py src/inference_service.py src/inference.py src/object_estimation_service.py
-src/object_to_point_cloud.py src/obstacle_detection_multiple_rovers.py src/obstacle_detection_open_cv.py src/plot_boxes_real_time.py
-src/bounding_box_utils/bounding_box_utils.py src/kera_layers/keras_layers_AnchorBoxes.py src/kera_layers/keras_layers_DecodeDetections.py
-src/kera_layers/keras_layers_DecodeDetectionsFast.py src/kera_layers/keras_layers_L2Normalization.py src/keras_loss_function/keras_ssd_loss.py
-src/ssd_encoder_decoder/matching_utils.py src/ssd_encoder_decoder/ssd_input_decoder.py src/ssd_encoder_decoder/ssd_output_decoder.py
-src/models/keras_ssd7.py src/models/keras_ssd300.py src/models/keras_ssd512.py  
+src/object_to_point_cloud.py src/obstacle_detection_multiple_rovers.py src/obstacle_detection_open_cv.py src/plot_boxes_real_time.py  
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+install(PROGRAMS src/bounding_box_utils/bounding_box_utils.py  
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/bounding_box_utils
+)
+
+install(PROGRAMS src/keras_layers/keras_layer_AnchorBoxes.py src/keras_layers/keras_layer_DecodeDetections.py
+src/keras_layers/keras_layer_DecodeDetectionsFast.py src/keras_layers/keras_layer_L2Normalization.py 
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/keras_layers
+)
+
+install(PROGRAMS src/keras_loss_function/keras_ssd_loss.py  
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/keras_loss_function
+)
+
+install(PROGRAMS src/ssd_encoder_decoder/matching_utils.py src/ssd_encoder_decoder/ssd_input_encoder.py src/ssd_encoder_decoder/ssd_output_decoder.py  
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/ssd_encoder_decoder
+)
+
+install(PROGRAMS src/models/keras_ssd7.py src/models/keras_ssd300.py src/models/keras_ssd512.py  
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/models
+)
 
 install(DIRECTORY launch/
 	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)

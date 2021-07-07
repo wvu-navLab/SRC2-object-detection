@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 A data augmentation pipeline for datasets in bird's eye view, i.e. where there is
 no "up" or "down" in the images.

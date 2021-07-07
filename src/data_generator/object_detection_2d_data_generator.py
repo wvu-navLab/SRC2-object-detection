@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 A data generator for 2D object detection.
 

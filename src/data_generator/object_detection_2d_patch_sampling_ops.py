@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 Various patch sampling operations for data augmentation in 2D object detection.
 

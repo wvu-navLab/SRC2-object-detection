@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 The Keras-compatible loss function for the SSD model. Currently supports TensorFlow only.
 

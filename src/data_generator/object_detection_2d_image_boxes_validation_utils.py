@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 Utilities for 2D object detection related to answering the following questions:
 1. Given an image size and bounding boxes, which bounding boxes meet certain
