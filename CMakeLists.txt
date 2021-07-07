@@ -84,6 +84,10 @@ include_directories(
 ################################################################################
 install(PROGRAMS src/hauler_parking_position_service.py src/inference_service.py src/inference.py src/object_estimation_service.py
 src/object_to_point_cloud.py src/obstacle_detection_multiple_rovers.py src/obstacle_detection_open_cv.py src/plot_boxes_real_time.py
+src/bounding_box_utils/bounding_box_utils.py src/kera_layers/keras_layers_AnchorBoxes.py src/kera_layers/keras_layers_DecodeDetections.py
+src/kera_layers/keras_layers_DecodeDetectionsFast.py src/kera_layers/keras_layers_L2Normalization.py src/keras_loss_function/keras_ssd_loss.py
+src/ssd_encoder_decoder/matching_utils.py src/ssd_encoder_decoder/ssd_input_decoder.py src/ssd_encoder_decoder/ssd_output_decoder.py
+src/models/keras_ssd7.py src/models/keras_ssd300.py src/models/keras_ssd512.py  
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
