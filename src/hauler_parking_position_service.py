@@ -28,6 +28,8 @@ import numpy as np
 import tf.transformations as t_
 
 DISTANCE = 10 # constant in meters
+robot_name = rospy.get_param('robot_name',"small_excavator_1")
+
 
 class HaulerParkingPosition:
     """
@@ -35,7 +37,7 @@ class HaulerParkingPosition:
     """
     def __init__(self):
         rospy.loginfo("Node for converting obstacles to point cloud using disparity image is on")
-        self.mast_camera_publisher = rospy.Publisher("/small_excavator_1/sensor/yaw/command/position", Float64, queue_size = 10 )
+        self.mast_camera_publisher = rospy.Publisher("sensor/yaw/command/position", Float64, queue_size = 10 )
         rospy.on_shutdown(self.shutdown)
         self.start()
 
@@ -46,7 +48,7 @@ class HaulerParkingPosition:
 
 
         """
-        s = rospy.Service('/where_to_park_hauler', WhereToParkHauler, self.hauler_parking_location_service_handler)
+        s = rospy.Service('where_to_park_hauler', WhereToParkHauler, self.hauler_parking_location_service_handler)
         rospy.spin()
 
     def hauler_parking_location_service_handler(self, request):
@@ -63,7 +65,7 @@ class HaulerParkingPosition:
         rospy.wait_for_service('/find_object')
         _find_object =rospy.ServiceProxy('/find_object', FindObject)
         try:
-            _find_object = _find_object(robot_name = "small_excavator_1")
+            _find_object = _find_object(robot_name = robot_name)
         except rospy.ServiceException as exc:
             print("Service did not process request: " + str(exc))
         print(_find_object)
@@ -76,7 +78,7 @@ class HaulerParkingPosition:
         rospy.wait_for_service('/find_object')
         _find_object =rospy.ServiceProxy('/find_object', FindObject)
         try:
-            _find_object = _find_object(robot_name = "small_excavator_1")
+            _find_object = _find_object(robot_name = robot_name)
         except rospy.ServiceException as exc:
             print("Service did not process request: " + str(exc))
         #print(_find_object)
@@ -86,7 +88,7 @@ class HaulerParkingPosition:
         self.compare_sides()
 
         #Get odom topic
-        excavator_odom = rospy.wait_for_message("/small_excavator_1/localization/odometry/sensor_fusion", Odometry)
+        excavator_odom = rospy.wait_for_message("localization/odometry/sensor_fusion", Odometry)
         self.excavator_pose = excavator_odom.pose.pose
 
         print(self.excavator_pose)
@@ -129,7 +131,7 @@ class HaulerParkingPosition:
         best_position.pose.orientation.y = new_orientation_quat[1]
         best_position.pose.orientation.z = new_orientation_quat[2]
         best_position.pose.orientation.w = new_orientation_quat[3]
-        if side == "left":  
+        if side == "left":
             best_position.side = 1
         if side == "right":
             best_position.side = -1
