@@ -105,8 +105,8 @@ class ObstaclesToPointCloudMultipleRovers:
                 if (box.id == 0 or box.id == 1 or box.id == 2 or
                 box.id == 4 or box.id == 5 or box.id == 6):
                     self.process_data(box,robot_name)
-            if "small_excavator" in robot_name:
-                if (box.id == 0 or box.id == 1 or
+            elif "small_excavator" in robot_name:
+                if (box.id == 0 or box.id == 1 or box.id == 3 or
                 box.id == 4 or box.id == 5 or box.id == 6):
                     self.process_data(box,robot_name)
             else:
