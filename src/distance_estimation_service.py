@@ -79,7 +79,7 @@ class DistanceEstimationService:
             return False
         self.points.append(self.point)
 
-    def get_average_point(self):
+    def get_median_point(self):
         """
         Calculate average 3D point given a vector of 3d PointStamped
 
