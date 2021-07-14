@@ -38,7 +38,7 @@ class DistanceEstimationService:
         self.point = Point()
         self.points = []
         self.process_data(req)
-        response.object_position = self.get_median_point()
+        response.point = self.get_median_point()
         #print(response.object_position)
         return response
 
