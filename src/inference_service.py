@@ -21,7 +21,7 @@ import rospkg
 
 # Deep Learning Libraries
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
@@ -95,7 +95,7 @@ class ObjectDetectionInference:
         weights_path = rospack.get_path('src2_object_detection')+"/src/src2_finals_04.h5"
         self.model.load_weights(weights_path, by_name=True)
         #Instantiate an optimizer and the SSD loss function and compile the model.
-        adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        adam = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
         #sgd = SGD(lr=0.001, momentum=0.9, decay=0.0, nesterov=False)
         ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
         self.model.compile(optimizer="Adam", loss=ssd_loss.compute_loss)
