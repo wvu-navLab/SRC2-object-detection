@@ -17,7 +17,7 @@ from stereo_msgs.msg import DisparityImage
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point
 
-class ObjectEstimationService:
+class DistanceEstimationService:
     """
     Service that takes disparity image, stereo image pair and bounding box and
     returns the average 3D point of that
@@ -101,8 +101,8 @@ class ObjectEstimationService:
 
 def main():
     try:
-        rospy.init_node('object_estimator_service',anonymous=True)
-        distance_estimation_service = ObjectEstimationService()
+        rospy.init_node('distance_estimation_service',anonymous=True)
+        distance_estimation_service = DistanceEstimationService()
     except rospy.ROSInterruptException:
         pass
 if __name__ == '__main__':
