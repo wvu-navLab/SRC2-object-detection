@@ -5,4 +5,8 @@
   <node name="object_estimation_service" pkg="src2_object_detection" type="object_estimation_service.py" output="screen">
   </node>
 
+  <node name="distance_estimation_service" pkg="src2_object_detection" type="distance_estimation_service.py" output="screen">
+  </node>
+
+
 </launch>
