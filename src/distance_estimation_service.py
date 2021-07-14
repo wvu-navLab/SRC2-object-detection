@@ -34,7 +34,7 @@ class DistanceEstimationService:
         3D point from those
         """
         #rospy.loginfo("Object Estimation Service Started")
-        response = ObjectEstimationResponse()
+        response = DistanceEstimationResponse()
         self.point = Point()
         self.points = []
         self.process_data(req)
