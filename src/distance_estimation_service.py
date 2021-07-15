@@ -75,7 +75,7 @@ class DistanceEstimationService:
         self.point.z = self.sx/disparity*self.bl;
         self.point.x = (x-self.cx)/self.sx*self.point.z;
         self.point.y = (y-self.cy)/self.sy*self.point.z;
-        if self.point.z >= 1000:
+        if self.point.z >= 10:
             return False
         self.points.append(self.point)
 

@@ -16,6 +16,7 @@ from stereo_msgs.msg import DisparityImage
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Point
 
+OBJECT_THRESHOLD = 20
 class ObjectEstimationService:
     """
     Service that takes disparity image, stereo image pair and bounding box and
@@ -74,7 +75,7 @@ class ObjectEstimationService:
         self.point.z = self.sx/disparity*self.bl;
         self.point.x = (x-self.cx)/self.sx*self.point.z;
         self.point.y = (y-self.cy)/self.sy*self.point.z;
-        if self.point.z >= 1000:
+        if self.point.z >= OBJECT_THRESHOLD:
             return False
         self.points.append(self.point)
 
