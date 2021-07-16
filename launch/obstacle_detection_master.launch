@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
-  <arg name="list_of_robots" default="['small_scout_1','small_hauler_1','small_excavator_1','small_scout_2']" />
+  <arg name="list_of_robots" default="['small_scout_1','small_hauler_1','small_excavator_1','small_scout_2','small_hauler_2','small_excavator_2']" />
 
   <rosparam param="robots_list" subst_value="True">$(arg list_of_robots)</rosparam>
 
