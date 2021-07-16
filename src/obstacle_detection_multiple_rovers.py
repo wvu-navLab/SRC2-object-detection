@@ -88,10 +88,11 @@ class ObstaclesToPointCloudMultipleRovers:
                     _find_object =rospy.ServiceProxy('/find_object', FindObject)
                     try:
                         _find_object = _find_object(robot_name = robot)
+                        robot_boxes = _find_object.boxes
+                        self.convert_box_to_point_cloud(robot_boxes,robot)
                     except rospy.ServiceException as exc:
                         print("Service did not process request: " + str(exc))
-                    robot_boxes = _find_object.boxes
-                    self.convert_box_to_point_cloud(robot_boxes,robot)
+
             self.publisher.publish(String("Hi"))
             rate.sleep()
 
