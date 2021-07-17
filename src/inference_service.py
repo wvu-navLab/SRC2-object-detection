@@ -129,44 +129,51 @@ class ObjectDetectionInference:
         rospy.spin()
 
     def find_object_service_handler(self,request):
+        response = FindObjectResponse()
         print(request.robot_name)
-        if (self.images[request.robot_name]):
-            self.bridge = CvBridge()
-            original_image = self.bridge.imgmsg_to_cv2(self.images[request.robot_name], "rgb8")
-            resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
-            boxes = DetectedBoxes()
-            boxes.header = self.images[request.robot_name].header
-            y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
-            y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
-            np.set_printoptions(precision=2, suppress=True, linewidth=90)
-            if print_to_terminal:
-                print("Predicted boxes:\n")
-                print('   class   conf xmin   ymin   xmax   ymax')
-                print(y_pred_thresh[0])
-            classes = ['background', 'processing_plant','repair_station','hauler','excavator','scout','obstacles',
-            'bin', 'marker_3_with_orange_background','marker_competition_logo','marker_north_center_nasa',
-            'marker_repair_recharge_station','craters','marker_regolith','marker_19a',
-            'marker_03_white_backgroun','solar_panels_processing_plant','solar_panels_repair_station',
-            'extra_01','extra_02','extra_03','extra_04','extra_05']
-            boxes.boxes = []
-            for box in y_pred_thresh[0]:
-                _box = Box()
-                # print("Box:{}".format(box[0]))
-                _box.id = int(box[0])
-                _box.confidence = box[1]
-                # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
-                _box.xmin = int(box[2] * original_image.shape[1] / img_width)
-                _box.ymin = int(box[3] * original_image.shape[0] / img_height)
-                if box[4]>300:
-                    box[4] = 300
-                if box[5]>300:
-                    box[5] = 300
-                _box.xmax = int(box[4] * original_image.shape[1] / img_width)
-                _box.ymax = int(box[5] * original_image.shape[0] / img_height)
-                boxes.boxes.append(_box)
-            response = FindObjectResponse()
-            response.boxes = boxes
+        if request.robot_name in list_of_robots:
+            if (self.images[request.robot_name]):
+                self.bridge = CvBridge()
+                original_image = self.bridge.imgmsg_to_cv2(self.images[request.robot_name], "rgb8")
+                resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)
+                boxes = DetectedBoxes()
+                boxes.header = self.images[request.robot_name].header
+                y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
+                y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
+                np.set_printoptions(precision=2, suppress=True, linewidth=90)
+                if print_to_terminal:
+                    print("Predicted boxes:\n")
+                    print('   class   conf xmin   ymin   xmax   ymax')
+                    print(y_pred_thresh[0])
+                classes = ['background', 'processing_plant','repair_station','hauler','excavator','scout','obstacles',
+                'bin', 'marker_3_with_orange_background','marker_competition_logo','marker_north_center_nasa',
+                'marker_repair_recharge_station','craters','marker_regolith','marker_19a',
+                'marker_03_white_backgroun','solar_panels_processing_plant','solar_panels_repair_station',
+                'extra_01','extra_02','extra_03','extra_04','extra_05']
+                boxes.boxes = []
+                for box in y_pred_thresh[0]:
+                    _box = Box()
+                    # print("Box:{}".format(box[0]))
+                    _box.id = int(box[0])
+                    _box.confidence = box[1]
+                    # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
+                    _box.xmin = int(box[2] * original_image.shape[1] / img_width)
+                    _box.ymin = int(box[3] * original_image.shape[0] / img_height)
+                    if box[4]>300:
+                        box[4] = 300
+                    if box[5]>300:
+                        box[5] = 300
+                    _box.xmax = int(box[4] * original_image.shape[1] / img_width)
+                    _box.ymax = int(box[5] * original_image.shape[0] / img_height)
+                    boxes.boxes.append(_box)
+                response.boxes = boxes
+                return response
+            else:
+                return response
+        else:
             return response
+
+
 
     def shutdown(self):
         """
