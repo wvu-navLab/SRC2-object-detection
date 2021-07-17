@@ -73,6 +73,10 @@ class ObjectDetectionInference:
         rospy.init_node('object_detection_inference', anonymous=True)
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Object Detection Inference Started")
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+
         print(list_of_robots)
         self.images = {key: None for key in list_of_robots}
         self.image_subscriber()
@@ -101,8 +105,7 @@ class ObjectDetectionInference:
         ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
         self.model.compile(optimizer="Adam", loss=ssd_loss.compute_loss)
         self.model.make_predict_function()
-        if print_to_terminal:
-            self.model.summary()
+        self.model.summary()
         self.start()
 
     def image_subscriber(self):
