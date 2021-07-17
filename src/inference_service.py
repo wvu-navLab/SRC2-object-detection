@@ -73,6 +73,7 @@ class ObjectDetectionInference:
         rospy.init_node('object_detection_inference', anonymous=True)
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo("Object Detection Inference Started")
+        print(list_of_robots)
         self.images = {key: None for key in list_of_robots}
         self.image_subscriber()
         rospack = rospkg.RosPack()
@@ -128,8 +129,8 @@ class ObjectDetectionInference:
         rospy.spin()
 
     def find_object_service_handler(self,request):
+        print(request.robot_name)
         if (self.images[request.robot_name]):
-
             self.bridge = CvBridge()
             original_image = self.bridge.imgmsg_to_cv2(self.images[request.robot_name], "rgb8")
             resized_image = cv2.resize(original_image, dsize=(300, 300), interpolation=cv2.INTER_CUBIC)

@@ -83,8 +83,8 @@ include_directories(
 ################################################################################
 # Install
 ################################################################################
-install(PROGRAMS src/hauler_parking_position_service.py src/inference_service.py src/inference.py src/object_estimation_service.py
-src/object_to_point_cloud.py src/obstacle_detection_multiple_rovers.py src/obstacle_detection_open_cv.py src/plot_boxes_real_time.py
+install(PROGRAMS src/hauler_parking_position_service.py src/inference_service.py src/object_estimation_service.py
+src/object_to_point_cloud.py src/obstacle_detection_multiple_rovers.py
 src/distance_estimation_service.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

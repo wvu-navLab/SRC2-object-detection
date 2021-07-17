@@ -5,7 +5,7 @@
 
   <rosparam param="robots_list" subst_value="True">$(arg list_of_robots)</rosparam>
 
-  <node name="inference_services" pkg="src2_object_detection" type="inference_service.py" output="screen">
+  <node name="inference_services" pkg="src2_object_detection" type="inference_service.py" output="screen" launch-prefix="xterm -e">
   </node>
 
   <node name="obstacle_detection" pkg="src2_object_detection" type="obstacle_detection_multiple_rovers.py" output="screen">
