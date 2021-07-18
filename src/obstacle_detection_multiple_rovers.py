@@ -102,18 +102,9 @@ class ObstaclesToPointCloudMultipleRovers:
         """
         self.points = []
         for box in robot_boxes.boxes:
-            if "small_hauler" in robot_name:
-                if (box.id == 0 or box.id == 1 or box.id == 2 or
-                box.id == 3 or box.id == 4 or box.id == 5 or box.id == 6):
-                    self.process_data(box,robot_name)
-            elif "small_excavator" in robot_name:
-                if (box.id == 0 or box.id == 1 or box.id == 2 or
-                box.id == 3 or box.id == 4 or box.id == 5 or box.id == 6):
-                    self.process_data(box,robot_name)
-            else:
-                if (box.id == 0 or box.id == 1 or box.id == 2 or
-                box.id == 3 or box.id == 4 or box.id == 5 or box.id == 6):
-                    self.process_data(box,robot_name)
+            if (box.id == 0 or box.id == 1 or box.id == 2 or
+            box.id == 3 or box.id == 4 or box.id == 5 or box.id == 6):
+                self.process_data(box,robot_name)
 
         # self.cluster_points(thresh = 30)
         scaled_polygon_pcl = PointCloud2()
