@@ -2,7 +2,7 @@
 
 <launch>
 
-  <node name="hauler_parking_position_service" pkg="src2_object_detection" type="hauler_parking_position_service.py" output="screen" launch-prefix="xterm -e">
+  <node name="hauler_parking_position_service" pkg="src2_object_detection" type="hauler_parking_position_service.py" output="screen">
   </node>
 
 </launch>
