@@ -58,7 +58,7 @@ class HaulerParkingPosition:
         self.right_boxes = DetectedBoxes()
 
         #Turn left:
-        print("Turning Left (10seconds)")
+        rospy.loginfo("Turning Left (10seconds)")
         self.mast_camera_publisher.publish(np.pi/2.0)
         rospy.sleep(12)
         rospy.wait_for_service('/find_object')
@@ -67,11 +67,10 @@ class HaulerParkingPosition:
             _find_object = _find_object(robot_name = robot_name)
         except rospy.ServiceException as exc:
             print("Service did not process request: " + str(exc))
-        print(_find_object)
         self.left_boxes = _find_object.boxes
 
         #Turn Right
-        print("Turning Right (20seconds)")
+        rospy.loginfo("Turning Right (20seconds)")
         self.mast_camera_publisher.publish(-np.pi/2.0)
         rospy.sleep(24)
         rospy.wait_for_service('/find_object')
@@ -86,7 +85,6 @@ class HaulerParkingPosition:
         #Get odom topic and estimate excavator heading
         excavator_odom = rospy.wait_for_message("localization/odometry/sensor_fusion", Odometry)
         self.excavator_pose = excavator_odom.pose.pose
-        print(self.excavator_pose)
         excavator_orientation_euler = t_.euler_from_quaternion([self.excavator_pose.orientation.x,
                                                         self.excavator_pose.orientation.y,
                                                         self.excavator_pose.orientation.z,
@@ -150,8 +148,8 @@ class HaulerParkingPosition:
         """
         x = self.excavator_pose.position.x + DISTANCE*np.sin(heading)
         y = self.excavator_pose.position.y + DISTANCE*np.cos(heading+np.pi)
-        print(x)
-        print(y)
+        rospy.loginfo(x)
+        rospy.loginfo(y)
         return x,y
 
     def get_left_pose(self, heading):
