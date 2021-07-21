@@ -77,7 +77,7 @@ class ObjectDetectionInference:
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
 
-        print(list_of_robots)
+        # print(list_of_robots)
         self.images = {key: None for key in list_of_robots}
         self.image_subscriber()
         rospack = rospkg.RosPack()
@@ -133,7 +133,7 @@ class ObjectDetectionInference:
 
     def find_object_service_handler(self,request):
         response = FindObjectResponse()
-        print(request.robot_name)
+        # print(request.robot_name)
         if request.robot_name in list_of_robots:
             if (self.images[request.robot_name]):
                 self.bridge = CvBridge()
