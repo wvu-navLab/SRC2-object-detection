@@ -134,7 +134,7 @@ class HaulerParkingPosition:
         for box in self.left_boxes.boxes:
             if box.id == 5:
                 left_boxes.append(box)
-        if len(left_boxes) > len(right_boxes):
+        if len(left_boxes)+1 >= len(right_boxes):
             return "right"
         else:
             return "left"
