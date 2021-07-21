@@ -110,7 +110,7 @@ class HaulerParkingPosition:
             new_orientation_quat = t_.quaternion_from_euler(new_orientation[0],
                                                             new_orientation[1],
                                                             new_orientation[2])
-        rospy.loginfo("[{}] Parking Position - x,y: {},{} - Perpendicular Orientation: {}".format(robot_name, x, y, excavator_orientation_euler))
+        rospy.loginfo("[{}] Parking Position - x,y: {},{} - Perpendicular Orientation: {}".format(robot_name, x, y, new_orientation[2]))
 
         best_position = WhereToParkHaulerResponse()
         best_position.pose.position.x = x
