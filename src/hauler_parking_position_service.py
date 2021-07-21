@@ -58,7 +58,6 @@ class HaulerParkingPosition:
         self.right_boxes = DetectedBoxes()
 
         #Turn left:
-        rospy.loginfo("Turning Left (10seconds)")
         self.mast_camera_publisher.publish(np.pi/2.0)
         rospy.sleep(12)
         rospy.wait_for_service('/find_object')
@@ -70,7 +69,6 @@ class HaulerParkingPosition:
         self.left_boxes = _find_object.boxes
 
         #Turn Right
-        rospy.loginfo("Turning Right (20seconds)")
         self.mast_camera_publisher.publish(-np.pi/2.0)
         rospy.sleep(24)
         rospy.wait_for_service('/find_object')
@@ -148,8 +146,6 @@ class HaulerParkingPosition:
         """
         x = self.excavator_pose.position.x + DISTANCE*np.sin(heading)
         y = self.excavator_pose.position.y + DISTANCE*np.cos(heading+np.pi)
-        rospy.loginfo(x)
-        rospy.loginfo(y)
         return x,y
 
     def get_left_pose(self, heading):
