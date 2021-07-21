@@ -76,7 +76,7 @@ class ObstaclesToPointCloudMultipleRovers:
                     robot_boxes = _find_object.boxes
                     self.convert_box_to_point_cloud(robot_boxes,robot)
                 except rospy.ServiceException as exc:
-                    print("Service did not process request: " + str(exc))
+                    rospy.logerr("Service did not process request: " + str(exc))
             rate.sleep()
 
     def convert_box_to_point_cloud(self, robot_boxes, robot_name):

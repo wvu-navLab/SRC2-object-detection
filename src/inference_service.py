@@ -30,15 +30,9 @@ from models.keras_ssd300 import ssd_300 # pierluigi ferrari implementation of ss
                                         # https://github.com/pierluigiferrari/ssd_keras
 from keras_loss_function.keras_ssd_loss import SSDLoss
 import tensorflow as tf
-
 # System Libraries
 import glob
 
-
-print_to_terminal = rospy.get_param('inference/print_to_terminal', False)
-
-# list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_hauler_1","small_excavator_1"]) #List of robots that are being used
-# list_of_robots = rospy.get_param('robots_list', ["small_scout_1", "small_scout_2","small_hauler_1","small_hauler_2","small_excavator_1","small_excavator_2"]) #List of robots that are being used
 list_of_robots = rospy.get_param('robots_list', ["small_scout_1","small_scout_2","small_hauler_1","small_excavator_1"]) #List of robots that are being used
 
 # Set the image size.
@@ -62,7 +56,6 @@ swap_channels = [2, 1, 0]
 subtract_mean = [123, 117, 104] # get the mean for this dataset
 confidence_threshold = 0.5 # Thershold for the box estimation
 
-
 class ObjectDetectionInference:
     def __init__(self):
         """
@@ -72,13 +65,11 @@ class ObjectDetectionInference:
         """
         rospy.init_node('object_detection_inference', anonymous=True)
         rospy.on_shutdown(self.shutdown)
-        rospy.loginfo("Object Detection Inference Started")
+        rospy.loginfo("Object Detection Inference Started  for {}".format(list_of_robots))
         gpus = tf.config.experimental.list_physical_devices('GPU')
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
-
-        # print(list_of_robots)
-        self.images = {key: None for key in list_of_robots}
+        self.images = {key: None for key in list_of_robots} # Iterate over list of rovers to create a dictionary of images
         self.image_subscriber()
         rospack = rospkg.RosPack()
         K.clear_session() # Clear previous models from memory.
@@ -132,8 +123,11 @@ class ObjectDetectionInference:
         rospy.spin()
 
     def find_object_service_handler(self,request):
+        """
+        Service handler that calculates inference for the ssd neural network given the
+        name of the rover and output the id, boxes and confidence
+        """
         response = FindObjectResponse()
-        # print(request.robot_name)
         if request.robot_name in list_of_robots:
             if (self.images[request.robot_name]):
                 self.bridge = CvBridge()
@@ -144,19 +138,13 @@ class ObjectDetectionInference:
                 y_pred = self.model.predict(resized_image.reshape(1,300,300,3))
                 y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
                 np.set_printoptions(precision=2, suppress=True, linewidth=90)
-                if print_to_terminal:
-                    print("Predicted boxes:\n")
-                    print('   class   conf xmin   ymin   xmax   ymax')
-                    print(y_pred_thresh[0])
-                classes = ['background', 'processing_plant','repair_station','hauler','excavator','scout','obstacles',
-                'bin', 'marker_3_with_orange_background','marker_competition_logo','marker_north_center_nasa',
-                'marker_repair_recharge_station','craters','marker_regolith','marker_19a',
-                'marker_03_white_backgroun','solar_panels_processing_plant','solar_panels_repair_station',
-                'extra_01','extra_02','extra_03','extra_04','extra_05']
                 boxes.boxes = []
+                # Print confidence and box ids
+                if y_pred_thresh[0].any():
+                    _id, _conf, _, _, _, _ =zip(*y_pred_thresh[0])
+                    rospy.loginfo("[{}] Inference - Box IDs: {} - Confidence: {} ".format(request.robot_name, _id, _conf))
                 for box in y_pred_thresh[0]:
                     _box = Box()
-                    # print("Box:{}".format(box[0]))
                     _box.id = int(box[0])
                     _box.confidence = box[1]
                     # Transform the predicted bounding boxes for the 300x300 image to the original image dimensions.
@@ -175,8 +163,6 @@ class ObjectDetectionInference:
                 return response
         else:
             return response
-
-
 
     def shutdown(self):
         """

@@ -20,7 +20,7 @@ from geometry_msgs.msg import Point
 class DistanceEstimationService:
     """
     Service that takes disparity image, stereo image pair and bounding box and
-    returns the average 3D point of that
+    returns the median 3D point of that bounding box
     """
     def __init__(self):
         rospy.loginfo("Object 3D point estimation node is running")
@@ -33,13 +33,11 @@ class DistanceEstimationService:
         extract 3D points from the bounding box and returns the average
         3D point from those
         """
-        #rospy.loginfo("Object Estimation Service Started")
         response = DistanceEstimationResponse()
         self.point = Point()
         self.points = []
         self.process_data(req)
         response.point = self.get_median_point()
-        #print(response.object_position)
         return response
 
     def process_data(self, data):
@@ -81,8 +79,7 @@ class DistanceEstimationService:
 
     def get_median_point(self):
         """
-        Calculate average 3D point given a vector of 3d PointStamped
-
+        Calculate median 3D point given a vector of 3d PointStamped
         Return point stamped 3D point (with the stamp from the disparity image)
         """
         x = []
