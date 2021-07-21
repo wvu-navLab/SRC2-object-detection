@@ -36,23 +36,22 @@ class HaulerParkingPosition:
     Find best parking location for Hauler based on excavator camera view.
     """
     def __init__(self):
-        rospy.loginfo("Node for converting obstacles to point cloud using disparity image is on")
+        rospy.loginfo("[{}] Node for converting obstacles to point cloud using disparity image is on".format(robot_name))
         self.mast_camera_publisher = rospy.Publisher("sensor/yaw/command/position", Float64, queue_size = 10 )
         rospy.on_shutdown(self.shutdown)
         self.start()
 
-
     def start(self):
         """
-        Service that outpu
-
-
+        Method to start the where_to_park_hauler service server
         """
         s = rospy.Service('where_to_park_hauler', WhereToParkHauler, self.hauler_parking_location_service_handler)
         rospy.spin()
 
     def hauler_parking_location_service_handler(self, request):
         """
+        Service Handler to check for the best parking location for the hauler based
+        on excavator camera images from left and right
         """
         #Intialize and clear boxes
         self.left_boxes = DetectedBoxes()
@@ -81,29 +80,22 @@ class HaulerParkingPosition:
             _find_object = _find_object(robot_name = robot_name)
         except rospy.ServiceException as exc:
             print("Service did not process request: " + str(exc))
-        #print(_find_object)
         self.right_boxes = _find_object.boxes
         # Center camera again
         self.mast_camera_publisher.publish(0.0)
-        self.compare_sides()
-
-        #Get odom topic
+        #Get odom topic and estimate excavator heading
         excavator_odom = rospy.wait_for_message("localization/odometry/sensor_fusion", Odometry)
         self.excavator_pose = excavator_odom.pose.pose
-
         print(self.excavator_pose)
-
         excavator_orientation_euler = t_.euler_from_quaternion([self.excavator_pose.orientation.x,
                                                         self.excavator_pose.orientation.y,
                                                         self.excavator_pose.orientation.z,
                                                         self.excavator_pose.orientation.w])
-
-
-
+        #Compare sides:
         side = self.compare_sides()
         self.get_left_pose(excavator_orientation_euler[2])
         self.get_right_pose(excavator_orientation_euler[2])
-        print("Side: {}".format(side))
+        rospy.loginfo("[{}] Side: {}".format(robot_name, side))
         if side == "left":
             x,y = self.get_left_pose(excavator_orientation_euler[2])
             new_orientation = list(excavator_orientation_euler)
@@ -111,18 +103,14 @@ class HaulerParkingPosition:
             new_orientation_quat = t_.quaternion_from_euler(new_orientation[0],
                                                             new_orientation[1],
                                                             new_orientation[2])
-            print("Heading: {}".format(excavator_orientation_euler[2]))
         if side == "right":
             x,y = self.get_right_pose(excavator_orientation_euler[2])
-            print("Heading: {}".format(excavator_orientation_euler[2]))
             new_orientation = list(excavator_orientation_euler)
             new_orientation[2] =  new_orientation[2] + np.pi/2.0
             new_orientation_quat = t_.quaternion_from_euler(new_orientation[0],
                                                             new_orientation[1],
                                                             new_orientation[2])
-
-
-        print("Perpendicular Orientation: {}".format(new_orientation_quat))
+        rospy.loginfo("[{}] Parking Position - x,y: {},{} - Perpendicular Orientation: {}".format(robot_name, x, y, excavator_orientation_euler))
 
         best_position = WhereToParkHaulerResponse()
         best_position.pose.position.x = x
@@ -139,6 +127,9 @@ class HaulerParkingPosition:
         return(best_position)
 
     def compare_sides(self):
+        """
+        Simple comparison where the side with least number of obstacle is chosen
+        """
         left_boxes = []
         right_boxes = []
         for box in self.right_boxes.boxes:
@@ -153,6 +144,10 @@ class HaulerParkingPosition:
             return "left"
 
     def get_right_pose(self, heading):
+        """
+        Equations to estimate the x,y position of the hauler in the right side given
+        the current position of the excavator
+        """
         x = self.excavator_pose.position.x + DISTANCE*np.sin(heading)
         y = self.excavator_pose.position.y + DISTANCE*np.cos(heading+np.pi)
         print(x)
@@ -160,18 +155,19 @@ class HaulerParkingPosition:
         return x,y
 
     def get_left_pose(self, heading):
+        """
+        Equations to estimate the x,y position of the hauler in the left side given
+        the current position of the excavator
+        """
         x = self.excavator_pose.position.x - DISTANCE*np.sin(heading)
         y = self.excavator_pose.position.y + DISTANCE*np.cos(heading)
-        print(x)
-        print(y)
         return x,y
-
 
     def shutdown(self):
         """
         Shutdown Node
         """
-        rospy.loginfo("Hauler Parking Position Node is shutdown")
+        rospy.loginfo("[{}] Hauler Parking Position Node is shutdown".format(robot_name))
         rospy.sleep(1)
 
 def main():

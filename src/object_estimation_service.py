@@ -23,7 +23,8 @@ class ObjectEstimationService:
     returns the average 3D point of that
     """
     def __init__(self):
-        rospy.loginfo("Object 3D point estimation node is running")
+        rospy.loginfo("Object average distance estimation node is running")
+        rospy.on_shutdown(self.shutdown)
         s = rospy.Service('object_estimation', ObjectEstimation, self.object_estimation_handle)
         rospy.spin()
 
@@ -103,7 +104,12 @@ class ObjectEstimationService:
         point.point.z = z
         return point
 
-
+    def shutdown(self):
+        """
+        Shutdown Node
+        """
+        rospy.loginfo("Obstacle Distance Estimation Node is shutdown")
+        rospy.sleep(3)
 
 
 

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-
-## DEPRECATED ##
-
 """
 Created on Sun May 17 22:58:24 2020
 
@@ -9,7 +6,6 @@ Created on Sun May 17 22:58:24 2020
 """
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
-
 import rospy
 from std_msgs.msg import Bool
 from src2_object_detection.msg import Box
@@ -39,12 +35,9 @@ class ObstaclesToPointCloudMultipleRovers:
         self.disparity_images = {key: DisparityImage() for key in list_of_robots}
         self.point_cloud_publishers = {key: rospy.Publisher(key+"/inference/point_cloud",
                                         PointCloud2, queue_size = 1 ) for key in list_of_robots}
-        self.publisher = rospy.Publisher("Dummy_plublisher", String, queue_size =1)
         self.images_subscriber()
         rospy.sleep(1)
         self.detect_obstacles()
-
-
 
     def images_subscriber(self):
         """
@@ -71,42 +64,31 @@ class ObstaclesToPointCloudMultipleRovers:
         """
         Loop to run object detection and convert to point cloud for all the robot
         """
-        rate = rospy.Rate(5) # ROS Rate at 5Hz
+        rate = rospy.Rate(1) # ROS Rate at 1Hz
         watch_dog_timer = 0
         robot_boxes = DetectedBoxes()
         while not rospy.is_shutdown():
-            #DO OPENCV STUFF HERE
-            #####################
-            #####################
-            #####################
-
-            watch_dog_timer +=1
-            if watch_dog_timer >5: # run inference at slower rate
-                watch_dog_timer = 0
-                for robot in list_of_robots:
-                    rospy.wait_for_service('/find_object')
-                    _find_object =rospy.ServiceProxy('/find_object', FindObject)
-                    try:
-                        _find_object = _find_object(robot_name = robot)
-                        robot_boxes = _find_object.boxes
-                        self.convert_box_to_point_cloud(robot_boxes,robot)
-                    except rospy.ServiceException as exc:
-                        print("Service did not process request: " + str(exc))
-
-            self.publisher.publish(String("Hi"))
+            for robot in list_of_robots:
+                rospy.wait_for_service('/find_object')
+                _find_object =rospy.ServiceProxy('/find_object', FindObject)
+                try:
+                    _find_object = _find_object(robot_name = robot)
+                    robot_boxes = _find_object.boxes
+                    self.convert_box_to_point_cloud(robot_boxes,robot)
+                except rospy.ServiceException as exc:
+                    print("Service did not process request: " + str(exc))
             rate.sleep()
 
     def convert_box_to_point_cloud(self, robot_boxes, robot_name):
         """
-        Convert to point cloud and publish
+        Convert to point cloud and publish - processing plant, charging station,
+        rovers, obstacle and processing plant bin
         """
         self.points = []
         for box in robot_boxes.boxes:
             if (box.id == 0 or box.id == 1 or box.id == 2 or
             box.id == 3 or box.id == 4 or box.id == 5 or box.id == 6):
                 self.process_data(box,robot_name)
-
-        # self.cluster_points(thresh = 30)
         scaled_polygon_pcl = PointCloud2()
         scaled_polygon_pcl = pcl2.create_cloud_xyz32(robot_boxes.header, self.points)
         self.point_cloud_publishers[robot_name].publish(scaled_polygon_pcl)
@@ -147,46 +129,6 @@ class ObstaclesToPointCloudMultipleRovers:
         if z_ >= 1000:
             return False
         self.points.append([x_,y_,z_])
-
-    def cluster_points(self, thresh):
-        """
-        clustering the points using density based clustering method: DBSCAN
-        and only keeping the larger clusters
-
-        Input: points, theshold for cluster member size
-        ----------------------
-        for DBSCAN :
-
-        eps : The maximum distance between two samples for one to be considered as in the neighborhood of the other.
-        This is not a maximum bound on the distances of points within a cluster.
-        This is the most important DBSCAN parameter to choose appropriately for your data set and distance function.
-
-        min_samples : The number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
-        This includes the point itself
-        -----------------------
-        for KMeans :
-
-        n_clusters : number of clusters
-        -----------------------
-        thresh : after clustering we remove the points that have size lower than this value
-        """
-        self.points_np = np.array(self.points)
-        clustering = DBSCAN(eps=0.5, min_samples=30).fit(self.points_np)
-        # clustering = KMeans(n_clusters=5, random_state=0).fit(self.points)
-        labels_np = np.array(clustering.labels_)
-        u_labels = np.unique(labels_np)
-        for l in u_labels:
-            if l != -1:
-                self.seg_points[l] = []
-
-        for i in range(len(labels_np)):
-            m = clustering.labels_[i]
-            if m != -1 :    # -1 label for noisy data
-                self.seg_points[m].append(self.points[i])
-
-        for ind, val in self.seg_points.items():
-            if len(self.seg_points[ind]) > thresh:
-                self.filtered_points.extend(val)
 
     def shutdown(self):
         """
