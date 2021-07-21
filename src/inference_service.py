@@ -126,6 +126,15 @@ class ObjectDetectionInference:
         """
         Service handler that calculates inference for the ssd neural network given the
         name of the rover and output the id, boxes and confidence
+
+        Volatile List:
+        ---
+        'background', 'processing_plant','repair_station','hauler','excavator','scout','obstacles',
+        'bin', 'marker_3_with_orange_background','marker_competition_logo','marker_north_center_nasa',
+        'marker_repair_recharge_station','craters','marker_regolith','marker_19a',
+        'marker_03_white_backgroun','solar_panels_processing_plant','solar_panels_repair_station',
+        'extra_01','extra_02','extra_03','extra_04','extra_05'
+        ---
         """
         response = FindObjectResponse()
         if request.robot_name in list_of_robots:
